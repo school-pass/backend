@@ -1,6 +1,6 @@
-package gbsw.plutter.project.outing.dto;
+package gbsw.plutter.project.PMS.dto;
 
-import gbsw.plutter.project.outing.model.PassStatus;
+import gbsw.plutter.project.PMS.model.PassStatus;
 import lombok.*;
 
 

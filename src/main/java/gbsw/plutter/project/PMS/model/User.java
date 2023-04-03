@@ -24,5 +24,4 @@ public class User {
     private roleEnum role;
     @Column(length = 10, nullable = false)
     private String salt;
-
 }
