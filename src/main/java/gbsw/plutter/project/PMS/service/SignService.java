@@ -1,8 +1,7 @@
-package gbsw.plutter.project.outing.service;
+package gbsw.plutter.project.PMS.service;
 
-import gbsw.plutter.project.outing.repository.SignRepository;
+import gbsw.plutter.project.PMS.repository.SignRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
 import org.springframework.stereotype.Service;
 
 @Service

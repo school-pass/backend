@@ -1,4 +1,4 @@
-package gbsw.plutter.project.outing.model;
+package gbsw.plutter.project.PMS.model;
 ;
 import jakarta.persistence.*;
 import lombok.*;
@@ -34,7 +34,7 @@ public class Pass {
 
     @ManyToOne
     @JoinColumn(name = "userId")
-    private User user;
+    private Member member;
 
     @ManyToOne
     @JoinColumn(name = "teacherId")

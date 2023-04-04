@@ -1,4 +1,4 @@
-package gbsw.plutter.project.outing;
+package gbsw.plutter.project.PMS;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

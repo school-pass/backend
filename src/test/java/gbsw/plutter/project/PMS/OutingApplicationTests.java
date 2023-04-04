@@ -1,4 +1,4 @@
-package gbsw.plutter.project.outing;
+package gbsw.plutter.project.PMS;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

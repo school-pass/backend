@@ -1,11 +1,11 @@
-package gbsw.plutter.project.outing.model;
+package gbsw.plutter.project.PMS.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
 @Entity
-public class User {
+public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;

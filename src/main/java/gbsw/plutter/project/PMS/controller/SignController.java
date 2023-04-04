@@ -1,20 +1,16 @@
-package gbsw.plutter.project.outing.controller;
+package gbsw.plutter.project.PMS.controller;
 
-import gbsw.plutter.project.outing.dto.UserDTO;
-import gbsw.plutter.project.outing.service.SignService;
+import gbsw.plutter.project.PMS.dto.ResultDto;
+import gbsw.plutter.project.PMS.dto.UserDTO;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/sign")
+@RequestMapping("/api")
 public class SignController {
-    private SignService signService;
 
-    @PostMapping("/in")
-    public UserDTO writeReview(UserDTO userDTO) {
-        if(userDTO.getRole().equals("Admin") || userDTO.getRole().equals("Teacher")) {
-
-        }else{
-            return this.signService.loginStudents();
-        }
+    @PostMapping("/login")
+    public ResultDto login(UserDTO user) {
+        return new ResultDto(true, "test", null);
     }
+
 }

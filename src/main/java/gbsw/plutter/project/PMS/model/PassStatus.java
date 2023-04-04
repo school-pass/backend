@@ -1,4 +1,4 @@
-package gbsw.plutter.project.outing.model;
+package gbsw.plutter.project.PMS.model;
 
 public enum PassStatus {
     REQUESTED, APPROVED, REJECTED, EXPIRED

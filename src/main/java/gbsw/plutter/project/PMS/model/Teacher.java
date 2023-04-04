@@ -1,4 +1,4 @@
-package gbsw.plutter.project.outing.model;
+package gbsw.plutter.project.PMS.model;
 
 import jakarta.persistence.*;
 import lombok.Data;
@@ -21,6 +21,6 @@ public class Teacher {
 
     @OneToOne()
     @JoinColumn(name = "user", referencedColumnName = "userId")
-    private User userId;
+    private Member memberId;
 
 }
