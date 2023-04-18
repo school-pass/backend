@@ -1,16 +1,26 @@
 package gbsw.plutter.project.PMS.controller;
 
-import gbsw.plutter.project.PMS.dto.ResultDto;
-import gbsw.plutter.project.PMS.dto.UserDTO;
+
+import gbsw.plutter.project.PMS.dto.MemberDTO;
+import gbsw.plutter.project.PMS.dto.SignRequest;
+import gbsw.plutter.project.PMS.repository.MemberRepository;
+import gbsw.plutter.project.PMS.service.SignService;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api")
+@RequiredArgsConstructor
 public class SignController {
+    private final SignService signService;
 
     @PostMapping("/login")
-    public ResultDto login(UserDTO user) {
-        return new ResultDto(true, "test", null);
+    public ResponseEntity<MemberDTO> login(@RequestBody SignRequest sign) throws Exception {
+        return new ResponseEntity<>(signService.login(sign), HttpStatus.OK);
     }
-
+    @PostMapping("/register")
+    public ResponseEntity<Boolean> signup(@RequestBody SignRequest request) throws Exception {
+        return new ResponseEntity<>(signService.register(request), HttpStatus.OK);
+    }
 }

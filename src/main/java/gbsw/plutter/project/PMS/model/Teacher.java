@@ -1,6 +1,6 @@
 package gbsw.plutter.project.PMS.model;
 
-import jakarta.persistence.*;
+import javax.persistence.*;
 import lombok.Data;
 
 @Data
@@ -8,7 +8,7 @@ import lombok.Data;
 public class Teacher {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long teacherId;
+    private Long id;
 
     @Column()
     private Integer grade;
@@ -19,8 +19,6 @@ public class Teacher {
     @Column()
     private Integer number;
 
-    @OneToOne()
-    @JoinColumn(name = "user", referencedColumnName = "userId")
-    private Member memberId;
-
+    @Column()
+    private String name;
 }

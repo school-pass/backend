@@ -1,14 +1,19 @@
 package gbsw.plutter.project.PMS.model;
 
-import jakarta.persistence.*;
-import lombok.Data;
 
-@Data
+import lombok.*;
+
+import javax.persistence.*;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
+@Getter
+@Builder @AllArgsConstructor @NoArgsConstructor
 public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long userId;
+    private Long id;
     @Column(nullable = false)
     private String name;
     @Column()
@@ -17,11 +22,16 @@ public class Member {
     private Integer classes;
     @Column()
     private Integer number;
-    @Column(length = 8, nullable = false)
+    @Column(unique = true)
+    private String account;
+    @Column(length = 100, nullable = false)
     private String password;
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private roleEnum role;
-    @Column(length = 10, nullable = false)
-    private String salt;
+    @OneToMany(mappedBy = "member", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @Builder.Default
+    private List<Authority> roles = new ArrayList<>();
+
+    public void setRoles(List<Authority> role) {
+        this.roles = role;
+        role.forEach(o -> o.setMember(this));
+    }
 }
