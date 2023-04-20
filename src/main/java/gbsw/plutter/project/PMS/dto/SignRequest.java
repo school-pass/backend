@@ -6,9 +6,7 @@ import lombok.*;
 @Setter
 public class SignRequest {
         private String name;
-        private Integer grade;
-        private Integer classes;
-        private Integer number;
+        private String serialNum;
         private String account;
         private String password;
         private Integer permission;

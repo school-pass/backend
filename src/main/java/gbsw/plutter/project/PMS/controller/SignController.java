@@ -3,7 +3,6 @@ package gbsw.plutter.project.PMS.controller;
 
 import gbsw.plutter.project.PMS.dto.MemberDTO;
 import gbsw.plutter.project.PMS.dto.SignRequest;
-import gbsw.plutter.project.PMS.repository.MemberRepository;
 import gbsw.plutter.project.PMS.service.SignService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,9 +17,5 @@ public class SignController {
     @PostMapping("/login")
     public ResponseEntity<MemberDTO> login(@RequestBody SignRequest sign) throws Exception {
         return new ResponseEntity<>(signService.login(sign), HttpStatus.OK);
-    }
-    @PostMapping("/register")
-    public ResponseEntity<Boolean> signup(@RequestBody SignRequest request) throws Exception {
-        return new ResponseEntity<>(signService.register(request), HttpStatus.OK);
     }
 }

@@ -42,8 +42,8 @@ public class JwtProvider {
     }
 
     // 토큰 생성
-    public String createToken(String account, List<Authority> roles) {
-        Claims claims = Jwts.claims().setSubject(account);
+    public String createToken(String userId,String account, List<Authority> roles) {
+        Claims claims = Jwts.claims().setSubject(userId).setSubject(account);
         claims.put("roles", roles);
         Date now = new Date();
         return Jwts.builder()
@@ -63,6 +63,9 @@ public class JwtProvider {
 
     // 토큰에 담겨있는 유저 account 획득
     public String getAccount(String token) {
+        return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
+    }
+    public String getUserId(String token) {
         return Jwts.parserBuilder().setSigningKey(secretKey).build().parseClaimsJws(token).getBody().getSubject();
     }
 

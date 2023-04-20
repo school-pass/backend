@@ -16,12 +16,8 @@ public class Member {
     private Long id;
     @Column(nullable = false)
     private String name;
-    @Column()
-    private Integer grade;
-    @Column()
-    private Integer classes;
-    @Column()
-    private Integer number;
+    @Column(unique = true, length = 4)
+    private String serialNum;
     @Column(unique = true)
     private String account;
     @Column(length = 100, nullable = false)
@@ -29,7 +25,6 @@ public class Member {
     @OneToMany(mappedBy = "member", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
     private List<Authority> roles = new ArrayList<>();
-
     public void setRoles(List<Authority> role) {
         this.roles = role;
         role.forEach(o -> o.setMember(this));

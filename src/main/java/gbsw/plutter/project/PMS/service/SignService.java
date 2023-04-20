@@ -25,8 +25,8 @@ public class SignService {
     private final PasswordEncoder passwordEncoder;
     @Autowired
     private final JwtProvider jwtProvider;
-
     public MemberDTO login(SignRequest request) throws Exception {
+        try {
             Member member = memberRepository.findByAccount(request.getAccount()).orElseThrow(() ->
                     new BadCredentialsException("잘못된 계정정보입니다."));
 
@@ -38,38 +38,14 @@ public class SignService {
                     .id(member.getId())
                     .account(member.getAccount())
                     .name(member.getName())
-                    .grade(member.getGrade())
-                    .classes(member.getClasses())
-                    .number(member.getNumber())
+                    .serialNum(member.getSerialNum())
                     .roles(member.getRoles())
-                    .token(jwtProvider.createToken(member.getAccount(), member.getRoles()))
+                    .token(jwtProvider.createToken(member.getId().toString(), member.getAccount(), member.getRoles()))
                     .build();
-    }
-    public boolean register(SignRequest request) throws Exception {
-        try {
-            Member member = Member.builder()
-                    .account(request.getAccount())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .name(request.getName())
-                    .grade(request.getGrade())
-                    .classes(request.getClasses())
-                    .number(request.getNumber())
-                    .build();
-
-            if (request.getPermission().equals(0)) {
-                member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_ADMIN").build()));
-            } else if (request.getPermission().equals(1)) {
-                member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_TEACHER").build()));
-            } else if (request.getPermission().equals(2)) {
-                member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_STUDENT").build()));
-            }
-
-            memberRepository.save(member);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new Exception(e);
+          e.printStackTrace();
+          throw new Exception();
         }
-        return true;
     }
 
 }

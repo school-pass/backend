@@ -1,10 +1,13 @@
 package gbsw.plutter.project.PMS.model;
 
-import lombok.Data;
+import lombok.*;
 
 import javax.persistence.*;
 
-@Data
+@Getter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
 public class Place {
     @Id
