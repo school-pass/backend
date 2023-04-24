@@ -2,7 +2,7 @@ package gbsw.plutter.project.PMS.controller.place;
 
 import gbsw.plutter.project.PMS.dto.PlaceDTO;
 import gbsw.plutter.project.PMS.model.Place;
-import gbsw.plutter.project.PMS.service.Place.PlaceService;
+import gbsw.plutter.project.PMS.service.place.PlaceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +18,6 @@ public class PlaceController {
 
     @PostMapping()
     public List<Place> getParticular (@RequestBody PlaceDTO pd) throws Exception {
-        return new ArrayList<>(placeService.getParticular(pd));
+        return placeService.getParticular(pd);
     }
 }

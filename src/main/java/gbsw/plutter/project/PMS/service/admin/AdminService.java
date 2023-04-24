@@ -27,7 +27,7 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
 
     public boolean addUser(SignRequest request) throws Exception {
-        try {
+        //try{
             Member member = Member.builder()
                     .account(request.getAccount())
                     .password(passwordEncoder.encode(request.getPassword()))
@@ -51,13 +51,13 @@ public class AdminService {
                 member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_STUDENT").build()));
             }
             memberRepository.save(member);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new Exception();
-        }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//            throw new Exception();
+//        }
         return true;
     }
-    public Place addPlace(PlaceDTO placeDTO, Optional<Teacher> tId) throws Exception {
+    public Boolean addPlace(PlaceDTO placeDTO, Optional<Teacher> tId) throws Exception {
         try {
         Place place = Place.builder()
                     .teacher(tId.get())
@@ -68,7 +68,7 @@ public class AdminService {
                     .particular(placeDTO.getParticular())
                     .build();
         placeRepository.save(place);
-        return place;
+        return true;
         } catch (Exception e) {
             e.printStackTrace();
             throw new Exception();
@@ -79,6 +79,7 @@ public class AdminService {
             Teacher teacher = Teacher.builder()
                     .member(mId.get())
                     .name(mId.get().getName())
+                    .serialNum(mId.get().getSerialNum())
                     .tpermission(Tpermission.valueOf(permission))
                     .build();
             teacherRepository.save(teacher);

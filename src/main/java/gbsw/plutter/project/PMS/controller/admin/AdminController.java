@@ -36,17 +36,12 @@ public class AdminController {
         if (serNum.isPresent()) {
             throw new Exception("user found for serialNum: " + req.getSerialNum());
         } else {
-            Optional<Teacher> teacher = teacherRepository.findTeacherByMember_Id(serNum.get().getId());
-            if (!teacher.isPresent()) { // null과 같다면
-                throw new Exception("Found same serialNum");
-            } else {
-                return new ResponseEntity<>(adminService.addUser(req), HttpStatus.OK);
-            }
+            return new ResponseEntity<>(adminService.addUser(req), HttpStatus.OK);
         }
     }
 
     @PostMapping("/addPlace")
-    public ResponseEntity<Place> addPlace(@RequestBody PlaceDTO req, HttpServletRequest httpReq) throws Exception {
+    public ResponseEntity<Boolean> addPlace(@RequestBody PlaceDTO req, HttpServletRequest httpReq) throws Exception {
         Optional<Teacher> tId;
         // 사용자가 별도로 요청하는 teacher가 있는 경우
         if (req.getTeacherId() != null) {
@@ -55,7 +50,7 @@ public class AdminController {
             } catch (NumberFormatException e) {
                 throw new Exception("Invalid teacher ID format");
             }
-            if (!tId.isPresent()) {
+            if (tId.isEmpty()) {
                 throw new Exception("Teacher not found");
             }
         } else {

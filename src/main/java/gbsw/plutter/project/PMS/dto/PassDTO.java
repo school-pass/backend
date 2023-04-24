@@ -19,7 +19,7 @@ public class PassDTO {
     private String passReason;
     private LocalDateTime passStart;
     private LocalDateTime passExpiration;
-    private String passToken;
+    private String UID;
     private PassStatus passStatus;
     private String passPlace;
     private LocalDate createdAt;

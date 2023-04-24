@@ -16,7 +16,7 @@ public class Member {
     private Long id;
     @Column(nullable = false)
     private String name;
-    @Column(unique = true, length = 4)
+    @Column(unique = true)
     private String serialNum;
     @Column(unique = true)
     private String account;
