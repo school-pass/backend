@@ -31,11 +31,18 @@ public class AdminController {
 
     @PostMapping("/addUser")
     public ResponseEntity<Boolean> addUser(@RequestBody SignRequest req) throws Exception {
+        //serialNum 으로 유저 검색
         Optional<Member> serNum = memberRepository.findBySerialNum(req.getSerialNum());
-        if(serNum.isPresent()){
-
+        if (serNum.isPresent()) {
+            throw new Exception("user found for serialNum: " + req.getSerialNum());
+        } else {
+            Optional<Teacher> teacher = teacherRepository.findTeacherByMember_Id(serNum.get().getId());
+            if (!teacher.isPresent()) { // null과 같다면
+                throw new Exception("Found same serialNum");
+            } else {
+                return new ResponseEntity<>(adminService.addUser(req), HttpStatus.OK);
+            }
         }
-        return new ResponseEntity<>(adminService.addUser(req), HttpStatus.OK);
     }
 
     @PostMapping("/addPlace")

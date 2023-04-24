@@ -14,7 +14,7 @@ public class Teacher {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(unique = true)
+    @Column()
     private String serialNum;
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

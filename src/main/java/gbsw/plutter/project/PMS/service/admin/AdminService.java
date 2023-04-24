@@ -27,6 +27,7 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
 
     public boolean addUser(SignRequest request) throws Exception {
+        try {
             Member member = Member.builder()
                     .account(request.getAccount())
                     .password(passwordEncoder.encode(request.getPassword()))
@@ -50,6 +51,10 @@ public class AdminService {
                 member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_STUDENT").build()));
             }
             memberRepository.save(member);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new Exception();
+        }
         return true;
     }
     public Place addPlace(PlaceDTO placeDTO, Optional<Teacher> tId) throws Exception {
