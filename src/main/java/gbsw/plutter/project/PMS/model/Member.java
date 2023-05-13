@@ -9,19 +9,27 @@ import java.util.List;
 
 @Entity
 @Getter
-@Builder @AllArgsConstructor @NoArgsConstructor
+@Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false)
+
+    @Column()
     private String name;
-    @Column(unique = true)
-    private String serialNum;
-    @Column(unique = true)
-    private String account;
-    @Column(length = 100, nullable = false)
+
+    @Column(unique = true, nullable = false)
+    private String serialNumber;
+
+    @Column(nullable = false)
     private String password;
+
+    @Column(unique = true, nullable = false)
+    private String account;
+
     @OneToMany(mappedBy = "member", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
     private List<Authority> roles = new ArrayList<>();

@@ -20,18 +20,16 @@ import java.util.Optional;
 public class PlaceService {
     private final PlaceRepository placeRepository;
 
-    public List<Place> getParticular(PlaceDTO pd) throws Exception {
+    public List<Place> getLocationDetail(PlaceDTO pd) throws Exception {
+        List<Place> places;
         try {
-            List<Place> places;
-            log.info(pd.getLocation());
             places = placeRepository.findAllByLocation(pd.getLocation());
             if (places.isEmpty()) {
                 throw new Exception("location not found");
             }
-            return places;
         } catch (Exception e) {
             throw new Exception("DB에서 값을 가져오는 중 오류 발생");
         }
+        return places;
     }
-
 }

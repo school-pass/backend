@@ -10,6 +10,7 @@ public class PlaceDTO {
     private Integer capacity;
     private Integer maxCapacity;
     private Integer floor;
+    private String ipAddress;
     private String location;
-    private String particular;
+    private String locationDetail;
 }

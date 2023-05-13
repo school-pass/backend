@@ -14,14 +14,18 @@ public class Teacher {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column()
+
+    @OneToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "userId", nullable = false, unique = true)
+    private Member member;
+
+    @Column(name = "serialNum", unique = true)
     private String serialNum;
+
+    @Column(name = "name")
+    private String name;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Tpermission tpermission;
-    @OneToOne
-    @JoinColumn(name = "userId",referencedColumnName = "id")
-    private Member member;
-    @Column()
-    private String name;
 }

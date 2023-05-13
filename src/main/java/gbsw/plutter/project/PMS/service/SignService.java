@@ -38,7 +38,7 @@ public class SignService {
                     .id(member.getId())
                     .account(member.getAccount())
                     .name(member.getName())
-                    .serialNum(member.getSerialNum())
+                    .serialNum(member.getSerialNumber())
                     .roles(member.getRoles())
                     .token(jwtProvider.createToken(member.getId().toString(), member.getAccount(), member.getRoles()))
                     .build();

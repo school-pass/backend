@@ -10,4 +10,8 @@ import java.util.Optional;
 @Transactional
 public interface PlaceRepository extends JpaRepository<Place, Long> {
     List<Place> findAllByLocation(String location);
+
+    Optional<Place> findByLocationDetail(String detail);
+
+    Place findPlaceByIpAddress(String ipAddress);
 }

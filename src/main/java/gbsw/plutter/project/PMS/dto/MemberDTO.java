@@ -17,6 +17,7 @@ public class MemberDTO {
     private String serialNum;
     private String account;
     private String password;
+    private Integer permission;
     private List<Authority> roles = new ArrayList<>();
     private String token;
 }
