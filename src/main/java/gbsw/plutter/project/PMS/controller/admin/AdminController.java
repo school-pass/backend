@@ -3,8 +3,10 @@ package gbsw.plutter.project.PMS.controller.admin;
 import gbsw.plutter.project.PMS.config.JwtProvider;
 import gbsw.plutter.project.PMS.dto.MemberDTO;
 import gbsw.plutter.project.PMS.dto.PlaceDTO;
+import gbsw.plutter.project.PMS.dto.STDTO;
 import gbsw.plutter.project.PMS.dto.SignRequest;
 import gbsw.plutter.project.PMS.model.Member;
+import gbsw.plutter.project.PMS.model.SchoolTime;
 import gbsw.plutter.project.PMS.model.Teacher;
 import gbsw.plutter.project.PMS.repository.MemberRepository;
 import gbsw.plutter.project.PMS.repository.TeacherRepository;
@@ -29,7 +31,7 @@ public class AdminController {
     private final MemberRepository memberRepository;
 
     private final TeacherRepository teacherRepository;
-    //유저생성(완료), 유저수정(미완), 유저삭제(미완), 유저조회(미완)
+    //유저생성(완료), 유저수정(완료), 유저삭제(완료), 유저조회(완료)
     //장소생성(완료), 장소수정(미완), 장소삭제(미완), 장소조회(미완)
     @PostMapping("/addUser")
     public ResponseEntity<Boolean> addUser(@RequestBody SignRequest req) throws Exception {
@@ -42,16 +44,46 @@ public class AdminController {
         }
     }
 
+    @PostMapping("/addTime")
+    public ResponseEntity<Boolean> addTime(@RequestBody STDTO stdto) throws Exception {
+        try {
+            return new ResponseEntity<>(adminService.addSchoolTime(stdto), HttpStatus.OK);
+        } catch (Exception e) {
+            throw new Exception("올바른 값을 입력해주세요");
+        }
+    }
+
+    @PutMapping("/editTime")
+    public ResponseEntity<Boolean> editTime(@RequestBody STDTO stdto) throws Exception {
+        try {
+            return new ResponseEntity<>(adminService.editSchoolTime(stdto), HttpStatus.OK);
+        } catch (Exception e) {
+            throw new Exception("올바른 값을 입력해주세요");
+        }
+    }
+
+    @DeleteMapping("/deleteTime")
+    public ResponseEntity<Boolean> deleteTime(@RequestBody STDTO stdto) throws Exception {
+        try {
+            return new ResponseEntity<>(adminService.deleteSchoolTime(stdto), HttpStatus.OK);
+        } catch (Exception e) {
+            throw new Exception("올바른 값을 입력해주세요");
+        }
+    }
     @GetMapping("/{id}")
     public Optional<Member> getMemberById(@PathVariable("id") Long id) throws Exception {
         return adminService.getMemberById(id);
     }
-    @PostMapping("userList")
-    public List<Member> userList(@RequestBody MemberDTO md) throws Exception {
+    @GetMapping("/timeList")
+    public List<SchoolTime> getAllTime() throws Exception {
+        return adminService.getAllTime();
+    }
+    @PostMapping("/userList")
+    public List<Member> userList() throws Exception {
         return adminService.getUserList();
     }
 
-    @PutMapping("editUser")
+    @PutMapping("/editUser")
     public ResponseEntity<Boolean> editUser(@RequestBody MemberDTO md) throws Exception {
         Optional<Member> isUser = memberRepository.findByAccount(md.getAccount());
         if (isUser.isPresent()) {

@@ -12,5 +12,5 @@ public class PlaceDTO {
     private Integer floor;
     private String ipAddress;
     private String location;
-    private String locationDetail;
+    private String detail;
 }

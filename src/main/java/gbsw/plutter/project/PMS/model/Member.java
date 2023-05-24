@@ -17,19 +17,14 @@ public class Member {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
     @Column()
     private String name;
-
     @Column(unique = true, nullable = false)
     private String serialNumber;
-
     @Column(nullable = false)
     private String password;
-
     @Column(unique = true, nullable = false)
     private String account;
-
     @OneToMany(mappedBy = "member", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
     private List<Authority> roles = new ArrayList<>();

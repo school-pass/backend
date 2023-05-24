@@ -30,18 +30,18 @@ public class Pass {
     @Column(name = "passReason")
     private String passReason;
 
-    @Column(name = "passStart")
-    private LocalDateTime passStart;
+    @Column(name = "startPeriod")
+    private Integer startPeriod;
 
-    @Column(name = "validPass")
-    private LocalDateTime validPass;
+    @Column(name = "endPeriod")
+    private Integer endPeriod;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private PassStatus passStatus;
 
-    @Column(name = "UID")
-    private String uid;
+    @Column(name = "IMEI")
+    private String IMEI;
 
     @Column(name = "createdAt")
     private LocalDateTime createdAt;

@@ -18,12 +18,12 @@ public class PassDTO {
     private Long teacherId;
     private String detail;
     private String passReason;
-    private LocalDateTime passStart;
-    private long passExpiration;
+    private Integer startPeriod;
+    private Integer endPeriod;
     private Integer confirm;
     private String placeIp;
-    @JsonProperty("UID")
-    private String UID;
+    @JsonProperty("IMEI")
+    private String IMEI;
     private PassStatus passStatus;
     private String passPlace;
     private LocalDate createdAt;

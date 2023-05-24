@@ -32,4 +32,17 @@ public class PlaceService {
         }
         return places;
     }
+
+    public List<Place> getAllPlace() throws Exception {
+        List<Place> places;
+        try {
+            places = placeRepository.findAll();
+            if (places.isEmpty()) {
+                throw new Exception("장소를 추가해주세요");
+            }
+        } catch (Exception e) {
+            throw new Exception("DB에서 값을 가져오는 중 오류 발생");
+        }
+        return places;
+    }
 }
