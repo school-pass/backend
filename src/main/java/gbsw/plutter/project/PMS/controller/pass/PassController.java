@@ -29,6 +29,25 @@ public class PassController {
     private final PlaceRepository placeRepository;
     private final TeacherRepository teacherRepository;
     private final SchoolTimeRepository schoolTimeRepository;
+
+    public LocalDateTime[] conversionPeriod(Integer startPeriod, Integer endPeriod) {
+        LocalDate today = LocalDate.now();
+        SchoolTime schoolTimeStart;
+        SchoolTime schoolTimeEnd;
+        LocalTime startTime;
+        LocalTime endTime;
+        LocalDateTime passStart;
+        LocalDateTime passEnd;
+        schoolTimeStart = schoolTimeRepository.findByPeriod(startPeriod);
+        schoolTimeEnd = schoolTimeRepository.findByPeriod(endPeriod);
+        startTime = schoolTimeStart.getStartTime();
+        endTime = schoolTimeEnd.getEndTime();
+        passStart = LocalDateTime.of(today, startTime);
+        passEnd = LocalDateTime.of(today, endTime);
+
+        LocalDateTime[] passStartAndEnd = { passStart, passEnd };
+        return passStartAndEnd;
+    }
     //
     @PostMapping("/add")
     public ResponseEntity<Boolean> addPass(@RequestBody PassDTO pd) throws Exception {
@@ -71,11 +90,39 @@ public class PassController {
 
     @PostMapping("/use")
     public ResponseEntity<Boolean> validPass(@RequestBody PassDTO pd) throws Exception {
-//        try {
+        try {
             return new ResponseEntity<>(passService.validPass(pd), HttpStatus.OK);
-//        } catch (Exception e) {
-//            throw new Exception("출입증 검증 도중 에러가 발생했습니다. 원인 : "+e.getMessage());
-//        }
+        } catch (Exception e) {
+            throw new Exception("출입증 검증 도중 에러가 발생했습니다. 원인 : "+e.getMessage());
+        }
+    }
+
+    @PostMapping("/phone")
+    public ResponseEntity<Map<String, Object>> findByIMEI(@RequestBody PassDTO pd) throws Exception {
+        try {
+            Pass pass = passService.findByIMEI(pd);
+            Map<String, Object> modfiedPass = new HashMap<>();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime[] passStartAndEnd = conversionPeriod(pass.getStartPeriod(), pass.getEndPeriod());
+            LocalDateTime passStart = passStartAndEnd[0];
+            LocalDateTime passEnd = passStartAndEnd[1];
+            modfiedPass.put("passId", pass.getId());
+            modfiedPass.put("memberId", pass.getMember().getId());
+            modfiedPass.put("teacherId", pass.getTeacher().getId());
+            modfiedPass.put("placeId", pass.getPlace().getId());
+            modfiedPass.put("passReason", pass.getPassReason());
+            modfiedPass.put("startPeriod", passStart.format(formatter));
+            modfiedPass.put("endPeriod", passEnd.format(formatter));
+            modfiedPass.put("passStatus", pass.getPassStatus());
+            modfiedPass.put("createdAt", pass.getCreatedAt().format(formatter));
+            if(pass.getUpdatedAt() != null) {
+                modfiedPass.put("updatedAt", pass.getUpdatedAt());
+            }
+
+            return new ResponseEntity<>(modfiedPass, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new Exception("출입증 검색 도중 에러가 발생했습니다. 원인 : "+e.getMessage());
+        }
     }
 
     @GetMapping("/list")
@@ -83,29 +130,12 @@ public class PassController {
         try {
             List<Pass> passList = passService.getAllPass();
             List<Map<String, Object>> modifiedPassList = new ArrayList<>();
-            LocalDate today = LocalDate.now();
-            SchoolTime schoolTimeStart;
-            SchoolTime schoolTimeEnd;
-            LocalTime startTime;
-            LocalTime endTime;
-            LocalDateTime passStart;
-            LocalDateTime passEnd;
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
             for (Pass pass : passList) {
-                if (pass.getStartPeriod().equals(pass.getEndPeriod())) {
-                    schoolTimeStart = schoolTimeRepository.findByPeriod(pass.getStartPeriod());
-                    startTime = schoolTimeStart.getStartTime();
-                    endTime = schoolTimeStart.getEndTime();
-                    passStart = LocalDateTime.of(today, startTime);
-                    passEnd = LocalDateTime.of(today, endTime);
-                } else {
-                    schoolTimeStart = schoolTimeRepository.findByPeriod(pass.getStartPeriod());
-                    schoolTimeEnd = schoolTimeRepository.findByPeriod(pass.getEndPeriod());
-                    startTime = schoolTimeStart.getStartTime();
-                    endTime = schoolTimeEnd.getEndTime();
-                    passStart = LocalDateTime.of(today, startTime);
-                    passEnd = LocalDateTime.of(today, endTime);
-                }
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime[] passStartAndEnd = conversionPeriod(pass.getStartPeriod(), pass.getEndPeriod());
+                LocalDateTime passStart = passStartAndEnd[0];
+                LocalDateTime passEnd = passStartAndEnd[1];
+
                 Map<String, Object> modifiedPass = new HashMap<>();
                 modifiedPass.put("id", pass.getId());
                 modifiedPass.put("memberId", pass.getMember().getId());

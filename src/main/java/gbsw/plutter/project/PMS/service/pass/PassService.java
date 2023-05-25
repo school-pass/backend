@@ -65,7 +65,7 @@ public class PassService {
     }
 
     public Boolean applyPass(PassDTO pd) throws Exception {
-//        try {
+        try {
             Teacher teacher;
             Optional<Teacher> tId = teacherRepository.findTeacherByMember_Id(pd.getUserId());
             if (tId.isPresent()) {
@@ -84,9 +84,9 @@ public class PassService {
             pass.setTeacher(teacher);
             passRepository.save(pass);
             return true;
-//        } catch (Exception e) {
-//            throw new Exception("데이터베이스에 값을 저장하는 중에 오류가 발생했습니다");
-//        }
+        } catch (Exception e) {
+            throw new Exception("데이터베이스에 값을 저장하는 중에 오류가 발생했습니다");
+        }
     }
 
     public List<Pass> getAllPass() throws Exception {
@@ -101,6 +101,47 @@ public class PassService {
             throw new Exception("알 수 없는 오류가 발생하였습니다. 다시 시도해주세요");
         }
     }
+
+    public Pass findByIMEI(PassDTO pd) throws Exception {
+        try {
+            Pass pass = passRepository.findPassByIMEI(pd.getIMEI());
+            LocalDateTime now = LocalDateTime.now();
+            LocalDate today = LocalDate.now();
+            SchoolTime schoolTimeStart;
+            SchoolTime schoolTimeEnd;
+            LocalTime startTime;
+            LocalTime endTime;
+            LocalDateTime passStart;
+            LocalDateTime passEnd;
+            if (pass == null) {
+                throw new Exception("해당하는 IMEI를 가진 출입증을 찾지 못 했습니다.");
+            }
+            if (pass.getPassStatus() != PassStatus.APPROVED) {
+                throw new Exception("출입증이 승인되지 않았습니다.");
+            }
+            if(pass.getStartPeriod().equals(pass.getEndPeriod())) {
+                schoolTimeStart = schoolTimeRepository.findByPeriod(pass.getStartPeriod());
+                startTime = schoolTimeStart.getStartTime();
+                endTime = schoolTimeStart.getEndTime();
+                passStart = LocalDateTime.of(today, startTime);
+                passEnd = LocalDateTime.of(today, endTime);
+            } else {
+                schoolTimeStart = schoolTimeRepository.findByPeriod(pass.getStartPeriod());
+                schoolTimeEnd = schoolTimeRepository.findByPeriod(pass.getEndPeriod());
+                startTime = schoolTimeStart.getStartTime();
+                endTime = schoolTimeEnd.getEndTime();
+                passStart = LocalDateTime.of(today, startTime);
+                passEnd = LocalDateTime.of(today, endTime);
+            }
+            if(!isBetween(now, passStart, passEnd)) {
+                throw new Exception("사용가능한 출입증이 없습니다.");
+            }
+            return pass;
+        } catch (Exception e) {
+            throw new Exception("알 수 없는 오류가 발생하였습니다. 다시 시도해주세요");
+        }
+    }
+
     public Boolean validPass(PassDTO pd) throws Exception {
         try {
             Place place = placeRepository.findPlaceByIpAddress(pd.getPlaceIp());
