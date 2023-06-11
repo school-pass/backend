@@ -1,5 +1,6 @@
 package gbsw.plutter.project.PMS.service.admin;
 
+import com.sun.jdi.InternalException;
 import gbsw.plutter.project.PMS.dto.MemberDTO;
 import gbsw.plutter.project.PMS.dto.PlaceDTO;
 import gbsw.plutter.project.PMS.dto.STDTO;
@@ -14,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import javax.management.relation.Role;
 import javax.transaction.Transactional;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -33,7 +35,6 @@ public class AdminService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
     private final SchoolTimeRepository schoolRepository;
-
     public boolean addUser(SignRequest request) throws Exception {
         try {
             Member member = Member.builder()

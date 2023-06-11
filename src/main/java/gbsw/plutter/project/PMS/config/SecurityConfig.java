@@ -17,6 +17,7 @@ import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -40,34 +41,22 @@ public class SecurityConfig {
                 // 쿠키 기반이 아닌 JWT 기반이므로 사용하지 않음
                 .csrf().disable()
                 // CORS 설정
-                .cors(c -> {
-                            CorsConfigurationSource source = request -> {
-                                // Cors 허용 패턴
-                                CorsConfiguration config = new CorsConfiguration();
-                                config.setAllowedOrigins(
-                                        List.of("*")
-                                );
-                                config.setAllowedMethods(
-                                        List.of("*")
-                                );
-                                return config;
-                            };
-                            c.configurationSource(source);
-                        }
-                )
+                .cors()
+                .and()
                 // Spring Security 세션 정책 : 세션을 생성 및 사용하지 않음
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 // 조건별로 요청 허용/제한 설정
                 .authorizeRequests()
                 // 로그인은 모두 승인
-                .antMatchers( "/login").permitAll()
-                // /admin으로 시작하는 요청은 ADMIN 권한이 있는 유저에게만 허용
-                .antMatchers("/admin/**").permitAll()
-                // /user 로 시작하는 요청은 USER 권한이 있는 유저에게만 허용
-                .antMatchers("/student/**").permitAll()
-                .antMatchers("/place/**").permitAll()
-                .antMatchers("/pass/**").permitAll()
+//                .antMatchers("/login").permitAll()
+//                // /admin으로 시작하는 요청은 ADMIN 권한이 있는 유저에게만 허용
+//                .antMatchers("/admin/**").permitAll()
+//                // /user로 시작하는 요청은 USER 권한이 있는 유저에게만 허용
+//                .antMatchers("/student/**").permitAll()
+//                .antMatchers("/place/**").permitAll()
+//                .antMatchers("/pass/**").permitAll()
+                .antMatchers("/**").permitAll()
                 .anyRequest().denyAll()
                 .and()
                 // JWT 인증 필터 적용
@@ -96,6 +85,18 @@ public class SecurityConfig {
                 });
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("*"); // 모든 출처 허용
+        configuration.addAllowedMethod("*"); // 모든 HTTP 메서드 허용
+        configuration.addAllowedHeader("*"); // 모든 헤더 허용
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
     @Bean

@@ -48,7 +48,6 @@ public class PassController {
         LocalDateTime[] passStartAndEnd = { passStart, passEnd };
         return passStartAndEnd;
     }
-    //
     @PostMapping("/add")
     public ResponseEntity<Boolean> addPass(@RequestBody PassDTO pd) throws Exception {
         try {
@@ -137,7 +136,7 @@ public class PassController {
                 LocalDateTime passEnd = passStartAndEnd[1];
 
                 Map<String, Object> modifiedPass = new HashMap<>();
-                modifiedPass.put("id", pass.getId());
+                modifiedPass.put("passId", pass.getId());
                 modifiedPass.put("memberId", pass.getMember().getId());
                 modifiedPass.put("teacherId", pass.getTeacher().getId());
                 modifiedPass.put("startPeriod", passStart.format(formatter));

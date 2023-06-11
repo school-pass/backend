@@ -11,15 +11,17 @@ import gbsw.plutter.project.PMS.model.Teacher;
 import gbsw.plutter.project.PMS.repository.MemberRepository;
 import gbsw.plutter.project.PMS.repository.TeacherRepository;
 import gbsw.plutter.project.PMS.service.admin.AdminService;
+import gbsw.plutter.project.PMS.service.place.PlaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import javax.management.relation.Role;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
@@ -29,7 +31,7 @@ public class AdminController {
     private final AdminService adminService;
     private final JwtProvider jwtProvider;
     private final MemberRepository memberRepository;
-
+    private final PlaceService placeService;
     private final TeacherRepository teacherRepository;
     //유저생성(완료), 유저수정(완료), 유저삭제(완료), 유저조회(완료)
     //장소생성(완료), 장소수정(미완), 장소삭제(미완), 장소조회(미완)
@@ -70,19 +72,6 @@ public class AdminController {
             throw new Exception("올바른 값을 입력해주세요");
         }
     }
-    @GetMapping("/{id}")
-    public Optional<Member> getMemberById(@PathVariable("id") Long id) throws Exception {
-        return adminService.getMemberById(id);
-    }
-    @GetMapping("/timeList")
-    public List<SchoolTime> getAllTime() throws Exception {
-        return adminService.getAllTime();
-    }
-    @PostMapping("/userList")
-    public List<Member> userList() throws Exception {
-        return adminService.getUserList();
-    }
-
     @PutMapping("/editUser")
     public ResponseEntity<Boolean> editUser(@RequestBody MemberDTO md) throws Exception {
         Optional<Member> isUser = memberRepository.findByAccount(md.getAccount());
@@ -124,5 +113,23 @@ public class AdminController {
             tId = teacherRepository.findTeacherByMember_Id(acc.get().getId());
         }
         return new ResponseEntity<>(adminService.addPlace(req, tId), HttpStatus.OK);
+    }
+
+    @PutMapping("/editPlace")
+    public ResponseEntity<Boolean> editPlace(@RequestBody PlaceDTO pd) throws Exception {
+        try {
+            return new ResponseEntity<>(placeService.editPlace(pd), HttpStatus.OK);
+        } catch (Exception e) {
+            throw new Exception("오류 발생");
+        }
+    }
+
+    @DeleteMapping("/deletePlace")
+    public ResponseEntity<Boolean> deletePlace(@RequestBody PlaceDTO pd) throws Exception {
+        try {
+            return new ResponseEntity<>(placeService.deletePlace(pd), HttpStatus.OK);
+        } catch (Exception e) {
+            throw new Exception("오류 발생");
+        }
     }
 }

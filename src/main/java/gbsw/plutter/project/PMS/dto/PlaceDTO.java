@@ -6,7 +6,8 @@ import lombok.Setter;
 @Getter
 @Setter
 public class PlaceDTO {
-    private Integer teacherId;
+    private Long id;
+    private Long teacherId;
     private Integer capacity;
     private Integer maxCapacity;
     private Integer floor;
