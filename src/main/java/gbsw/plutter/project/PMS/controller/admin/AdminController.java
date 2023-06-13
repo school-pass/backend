@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.management.relation.Role;
 import javax.servlet.http.HttpServletRequest;
@@ -33,103 +34,164 @@ public class AdminController {
     private final MemberRepository memberRepository;
     private final PlaceService placeService;
     private final TeacherRepository teacherRepository;
-    //유저생성(완료), 유저수정(완료), 유저삭제(완료), 유저조회(완료)
-    //장소생성(완료), 장소수정(미완), 장소삭제(미완), 장소조회(미완)
+
+    // ...
+
     @PostMapping("/addUser")
-    public ResponseEntity<Boolean> addUser(@RequestBody SignRequest req) throws Exception {
-        //serialNum 으로 유저 검색
+    public ResponseEntity<Boolean> addUser(@RequestBody SignRequest req) {
         Optional<Member> serNum = memberRepository.findBySerialNumber(req.getSerialNum());
         if (serNum.isPresent()) {
-            throw new Exception("user found for serialNum: " + req.getSerialNum());
-        } else {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists for serialNum: " + req.getSerialNum());
+        }
+        try {
             return new ResponseEntity<>(adminService.addUser(req), HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error occurred while adding user", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to add user");
         }
     }
 
     @PostMapping("/addTime")
-    public ResponseEntity<Boolean> addTime(@RequestBody STDTO stdto) throws Exception {
+    public ResponseEntity<Boolean> addTime(@RequestBody STDTO stdto) {
         try {
             return new ResponseEntity<>(adminService.addSchoolTime(stdto), HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("올바른 값을 입력해주세요");
+            log.error("Error occurred while adding school time", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to add school time");
         }
     }
 
     @PutMapping("/editTime")
-    public ResponseEntity<Boolean> editTime(@RequestBody STDTO stdto) throws Exception {
+    public ResponseEntity<Boolean> editTime(@RequestBody STDTO stdto) {
         try {
             return new ResponseEntity<>(adminService.editSchoolTime(stdto), HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("올바른 값을 입력해주세요");
+            log.error("Error occurred while editing school time", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to edit school time");
         }
     }
 
     @DeleteMapping("/deleteTime")
-    public ResponseEntity<Boolean> deleteTime(@RequestBody STDTO stdto) throws Exception {
+    public ResponseEntity<Map<String, List<Long>>> deleteTime(@RequestBody List<STDTO> stdtoList) {
+        List<Long> successIds = new ArrayList<>();
+        List<Long> failedIds = new ArrayList<>();
         try {
-            return new ResponseEntity<>(adminService.deleteSchoolTime(stdto), HttpStatus.OK);
+            for (STDTO stdto : stdtoList) {
+                boolean isSuccess = adminService.deleteSchoolTime(stdto);
+                if (isSuccess) {
+                    successIds.add(stdto.getId());
+                } else {
+                    failedIds.add(stdto.getId());
+                }
+            }
+            Map<String, List<Long>> response = new HashMap<>();
+            if(!successIds.isEmpty()) {
+                response.put("successIds", successIds);
+            }
+            if(!failedIds.isEmpty()) {
+                response.put("failedIds", failedIds);
+            }
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("올바른 값을 입력해주세요");
-        }
-    }
-    @PutMapping("/editUser")
-    public ResponseEntity<Boolean> editUser(@RequestBody MemberDTO md) throws Exception {
-        Optional<Member> isUser = memberRepository.findByAccount(md.getAccount());
-        if (isUser.isPresent()) {
-            return new ResponseEntity<>(adminService.editUser(md), HttpStatus.OK);
-        } else {
-            throw new Exception("User Not Found For SerialNum : " + md.getSerialNum());
+            log.error("Error occurred while deleting school time", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to delete school time");
         }
     }
 
+    //pass
+    @PutMapping("/editUser")
+    public ResponseEntity<Map<String, List<Long>>> editUser(@RequestBody List<MemberDTO> memberDTOs) {
+        List<Long> successIds = new ArrayList<>();
+        List<Long> failedIds = new ArrayList<>();
+
+        for (MemberDTO md : memberDTOs) {
+            Optional<Member> isUser = memberRepository.findById(md.getId());
+            if (isUser.isPresent()) {
+                boolean isSuccess = adminService.updateUser(md);
+                if (isSuccess) {
+                    successIds.add(md.getId());
+                } else {
+                    failedIds.add(md.getId());
+                }
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User Not Found For SerialNum: " + md.getSerialNum());
+            }
+        }
+        try {
+            Map<String, List<Long>> response = new HashMap<>();
+            if(!successIds.isEmpty()) {
+                response.put("successIds", successIds);
+            }
+            if(!failedIds.isEmpty()) {
+                response.put("failedIds", failedIds);
+            }
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error occurred while editing user", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to edit user");
+        }
+    }
+
+    //pass
     @DeleteMapping("/deleteUser")
-    public ResponseEntity<Boolean> deleteUser(@RequestBody MemberDTO md) throws  Exception {
-        Optional<Member> serNum = memberRepository.findById(md.getId());
-        if(serNum.isPresent()) {
-            return new ResponseEntity<>(adminService.deleteUser(md), HttpStatus.OK);
-        } else {
-            throw new Exception("User Not Found ID : "+md.getId());
+    public ResponseEntity<Boolean> deleteUser(@RequestBody MemberDTO md) {
+        try {
+            Optional<Member> serNum = memberRepository.findById(md.getId());
+            if (serNum.isPresent()) {
+                return new ResponseEntity<>(adminService.deleteUser(md), HttpStatus.OK);
+            } else {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User Not Found ID : " + md.getId());
+            }
+        } catch (Exception e) {
+            log.error("Error occurred while deleting user", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete user");
         }
     }
 
     @PostMapping("/addPlace")
-    public ResponseEntity<Boolean> addPlace(@RequestBody PlaceDTO req, HttpServletRequest httpReq) throws Exception {
-        Optional<Teacher> tId;
-        // 사용자가 별도로 요청하는 teacher가 있는 경우
-        if (req.getTeacherId() != null) {
-            try {
-                tId = teacherRepository.findTeacherByMember_Id(Long.parseLong(req.getTeacherId().toString()));
-            } catch (NumberFormatException e) {
-                throw new Exception("Invalid teacher ID format");
+    public ResponseEntity<Boolean> addPlace(@RequestBody PlaceDTO req, HttpServletRequest httpReq) {
+        try {
+            Optional<Teacher> tId;
+            if (req.getTeacherId() != null) {
+                try {
+                    tId = teacherRepository.findTeacherByMember_Id(Long.parseLong(req.getTeacherId().toString()));
+                } catch (NumberFormatException e) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid teacher ID format");
+                }
+                if (tId.isEmpty()) {
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher not found");
+                }
+            } else {
+                String token = jwtProvider.resolveToken(httpReq);
+                String teacherId = jwtProvider.getUserId(token.replace("Bearer", ""));
+                Optional<Member> acc = memberRepository.findByAccount(teacherId);
+                tId = teacherRepository.findTeacherByMember_Id(acc.get().getId());
             }
-            if (tId.isEmpty()) {
-                throw new Exception("Teacher not found");
-            }
-        } else {
-            // 사용자가 별도로 요청하는 teacher가 없는 경우
-            String token = jwtProvider.resolveToken(httpReq);
-            String teacherId = jwtProvider.getUserId(token.replace("Bearer", ""));
-            Optional<Member> acc = memberRepository.findByAccount(teacherId);
-            tId = teacherRepository.findTeacherByMember_Id(acc.get().getId());
+            return new ResponseEntity<>(adminService.addPlace(req, tId), HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("Error occurred while adding place", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to add place");
         }
-        return new ResponseEntity<>(adminService.addPlace(req, tId), HttpStatus.OK);
     }
 
     @PutMapping("/editPlace")
-    public ResponseEntity<Boolean> editPlace(@RequestBody PlaceDTO pd) throws Exception {
+    public ResponseEntity<Boolean> ediBPlace(@RequestBody PlaceDTO pd) {
         try {
             return new ResponseEntity<>(placeService.editPlace(pd), HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("오류 발생");
+            log.error("Error occurred while editing place", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to edit place");
         }
     }
 
     @DeleteMapping("/deletePlace")
-    public ResponseEntity<Boolean> deletePlace(@RequestBody PlaceDTO pd) throws Exception {
+    public ResponseEntity<Boolean> deletePlace(@RequestBody PlaceDTO pd) {
         try {
             return new ResponseEntity<>(placeService.deletePlace(pd), HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("오류 발생");
+            log.error("Error occurred while deleting place", e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete place");
         }
     }
 }
+

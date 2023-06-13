@@ -19,11 +19,11 @@ public class Member {
     private Long id;
     @Column()
     private String name;
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String serialNumber;
     @Column(nullable = false)
     private String password;
-    @Column(unique = true, nullable = false)
+    @Column(unique = true)
     private String account;
     @OneToMany(mappedBy = "member", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
