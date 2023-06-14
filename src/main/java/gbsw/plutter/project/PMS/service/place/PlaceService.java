@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +46,25 @@ public class PlaceService {
         }
     }
 
+    public List<Place> findPlaceByTeacherId(Long id) {
+        Teacher teacher;
+        Optional<Teacher> isTeacher = teacherRepository.findById(id);
+        if(isTeacher.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID : "+id+"를 가진 교사를 찾을 수 없습니다.");
+        }
+        teacher = isTeacher.get();
+        List<Place> place = new ArrayList<>();
+        Optional<List<Place>> isPlace = placeRepository.findAllByTeacher(teacher);
+        if(isPlace.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID : "+id+"를 가진 교사가 담당하는 구역이 없습니다.");
+        }
+        try {
+            place = isPlace.get();
+            return place;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "DB에서 값을 불러오는 도중 에러 발생");
+        }
+    }
     public Boolean editPlace(PlaceDTO pd) {
         try {
             Place place = placeRepository.findPlaceByIpAddress(pd.getIpAddress());

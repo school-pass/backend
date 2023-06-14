@@ -1,6 +1,7 @@
 package gbsw.plutter.project.PMS.repository;
 
 import gbsw.plutter.project.PMS.model.Place;
+import gbsw.plutter.project.PMS.model.Teacher;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import javax.transaction.Transactional;
@@ -14,4 +15,6 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
     Optional<Place> findByLocationDetail(String detail);
 
     Place findPlaceByIpAddress(String ipAddress);
+
+    Optional<List<Place>> findAllByTeacher(Teacher teacher);
 }

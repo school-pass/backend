@@ -1,5 +1,6 @@
 package gbsw.plutter.project.PMS.controller.user;
 
+import gbsw.plutter.project.PMS.dto.MemberDTO;
 import gbsw.plutter.project.PMS.model.Authority;
 import gbsw.plutter.project.PMS.model.Member;
 import gbsw.plutter.project.PMS.service.admin.AdminService;
@@ -7,10 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -22,9 +20,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserController {
     private final AdminService adminService;
-    @GetMapping("/{id}")
-    public Map<String, Object> getMemberById(@PathVariable("id") Long id) {
-        Member member = adminService.getMemberById(id);
+    @PostMapping("/findById")
+    public Map<String, Object> getMemberById(@RequestBody MemberDTO md) {
+        Member member = adminService.getMemberById(md.getId());
         Map<String, Object> modedMember = new HashMap<>();
         try {
             modedMember.put("id", member.getId());
@@ -33,7 +31,7 @@ public class UserController {
             modedMember.put("account", member.getAccount());
             modedMember.put("serialNum", member.getSerialNumber());
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "잘못된 요청입니다.");
         }
         return modedMember;
     }
@@ -43,10 +41,10 @@ public class UserController {
         return String.join(",", roleNames);
     }
 
-    @GetMapping("/userList")
-    public ResponseEntity<List<Map<String, Object>>> userList() throws Exception {
+    @GetMapping("/list")
+    public ResponseEntity<List<Map<String, Object>>> findAllUsers() {
         try {
-            List<Member> memberList = adminService.getUserList();
+            List<Member> memberList = adminService.findAllUsers();
             List<Map<String, Object>> modedMemberList = new ArrayList<>();
             for (Member member : memberList) {
                 Map<String, Object> modifiedList = new HashMap<>();
@@ -70,7 +68,7 @@ public class UserController {
             }
             return new ResponseEntity<>(modedMemberList, HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("에러 발생");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"잘못된 요청입니다.");
         }
     }
 }

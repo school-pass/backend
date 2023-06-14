@@ -2,6 +2,7 @@ package gbsw.plutter.project.PMS.controller.place;
 
 import gbsw.plutter.project.PMS.dto.PlaceDTO;
 import gbsw.plutter.project.PMS.model.Place;
+import gbsw.plutter.project.PMS.model.Teacher;
 import gbsw.plutter.project.PMS.service.place.PlaceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,10 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @Slf4j
@@ -56,8 +54,9 @@ public class PlaceController {
         }
     }
 
-//    @PostMapping("/") {
-//
+//    @PostMapping("/teacher")
+//    public ResponseEntity<List<Map<String, Object>>> findPlaceByTeacherId(@RequestBody PlaceDTO pd) {
+//        List<Place> places = placeService.findPlaceByTeacherId(pd.getTeacherId());
 //    }
 
     @PostMapping("/detail")

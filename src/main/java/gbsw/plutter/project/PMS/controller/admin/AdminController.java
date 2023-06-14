@@ -9,9 +9,11 @@ import gbsw.plutter.project.PMS.model.Member;
 import gbsw.plutter.project.PMS.model.SchoolTime;
 import gbsw.plutter.project.PMS.model.Teacher;
 import gbsw.plutter.project.PMS.repository.MemberRepository;
+import gbsw.plutter.project.PMS.repository.SchoolTimeRepository;
 import gbsw.plutter.project.PMS.repository.TeacherRepository;
 import gbsw.plutter.project.PMS.service.admin.AdminService;
 import gbsw.plutter.project.PMS.service.place.PlaceService;
+import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -32,6 +34,7 @@ public class AdminController {
     private final AdminService adminService;
     private final JwtProvider jwtProvider;
     private final MemberRepository memberRepository;
+    private final SchoolTimeRepository schoolTimeRepository;
     private final PlaceService placeService;
     private final TeacherRepository teacherRepository;
 
@@ -62,14 +65,34 @@ public class AdminController {
     }
 
     @PutMapping("/editTime")
-    public ResponseEntity<Boolean> editTime(@RequestBody STDTO stdto) {
-        try {
-            return new ResponseEntity<>(adminService.editSchoolTime(stdto), HttpStatus.OK);
-        } catch (Exception e) {
-            log.error("Error occurred while editing school time", e);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to edit school time");
+    public ResponseEntity<Map<String, List<Integer>>> editTime(@RequestBody List<STDTO> stdtos) {
+        List<Integer> successIds = new ArrayList<>();
+        List<Integer> failedIds = new ArrayList<>();
+
+        for (STDTO stdto : stdtos) {
+            Optional<SchoolTime> isTime = Optional.ofNullable(schoolTimeRepository.findByPeriod(stdto.getPeriod()));
+            if (isTime.isPresent()) {
+                boolean isSuccess = adminService.editSchoolTime(stdto);
+                if (isSuccess) {
+                    successIds.add(stdto.getPeriod());
+                } else {
+                    failedIds.add(stdto.getPeriod());
+                }
+            } else {
+                failedIds.add(stdto.getPeriod());
+            }
         }
+
+        Map<String, List<Integer>> response = new HashMap<>();
+        if (!successIds.isEmpty()) {
+            response.put("successPeriods", successIds);
+        }
+        if (!failedIds.isEmpty()) {
+            response.put("failedPeriods", failedIds);
+        }
+        return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
 
     @DeleteMapping("/deleteTime")
     public ResponseEntity<Map<String, List<Long>>> deleteTime(@RequestBody List<STDTO> stdtoList) {

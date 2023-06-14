@@ -6,10 +6,9 @@ import gbsw.plutter.project.PMS.service.admin.AdminService;
 import gbsw.plutter.project.PMS.service.schoolTime.TimeService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -21,16 +20,20 @@ public class TimeController {
     private final AdminService adminService;
     private final TimeService timeService;
     @GetMapping("")
-    public List<SchoolTime> getAllTime() throws Exception {
-        return adminService.getAllTime();
+    public List<SchoolTime> getAllTime() {
+        try {
+            return adminService.getAllTime();
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
+        }
     }
 
     @PostMapping("/period")
-    public SchoolTime findTimeByPeriod(STDTO stdto) throws Exception {
+    public SchoolTime findTimeByPeriod(@RequestBody STDTO stdto) {
         try {
-            return timeService.findTimeByPeriod(stdto);
+            return timeService.findTimeByPeriod(stdto.getPeriod());
         } catch (Exception e) {
-            throw new Exception("findTimeByPeriod에서 오류 발생");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
         }
     }
 }

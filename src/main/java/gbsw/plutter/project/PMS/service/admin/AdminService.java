@@ -41,8 +41,8 @@ public class AdminService {
     //todo
     public boolean addUser(SignRequest request) {
         Optional<Member> isMember = memberRepository.findBySerialNumber(request.getSerialNum());
-        if(isMember.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "해당하는 시리얼넘버를 가진 유저가 이미 존재합니다.\n serialNum : "+request.getSerialNum());
+        if (isMember.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "해당하는 시리얼넘버를 가진 유저가 이미 존재합니다.\n serialNum : " + request.getSerialNum());
         }
         try {
             Member member = Member.builder()
@@ -52,7 +52,7 @@ public class AdminService {
                     .serialNumber(request.getSerialNum())
                     .build();
 
-            if(request.getPermission().equals(0)) {
+            if (request.getPermission().equals(0)) {
                 member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_ADMIN").build()));
             } else if (request.getPermission().equals(1)) {
                 member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_TEACHER").build()));
@@ -73,7 +73,7 @@ public class AdminService {
         List<SchoolTime> ls;
         try {
             ls = schoolRepository.findAll();
-            if(ls.isEmpty()) {
+            if (ls.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "schoolTime isn't exist");
             }
         } catch (Exception e) {
@@ -82,14 +82,15 @@ public class AdminService {
         return ls;
     }
 
-    public static LocalTime convertToLocalTime(String timeString, String pattern) throws DateTimeParseException {
+    protected static LocalTime convertToLocalTime(String timeString, String pattern) throws DateTimeParseException {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
         return LocalTime.parse(timeString, formatter);
     }
+
     public Boolean addSchoolTime(STDTO stdto) {
         try {
             SchoolTime isTime = schoolRepository.findByPeriod(stdto.getPeriod());
-            if(isTime != null) {
+            if (isTime != null) {
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "Conflicted SchoolTime");
             }
             SchoolTime school = SchoolTime.builder()
@@ -103,6 +104,7 @@ public class AdminService {
         }
         return true;
     }
+
     public Member getMemberById(Long id) {
         Member resMember;
         Optional<Member> member;
@@ -118,15 +120,15 @@ public class AdminService {
         return resMember;
     }
 
-    public List<Member> getUserList() {
+    public List<Member> findAllUsers() {
         List<Member> members;
         try {
             members = memberRepository.findAll();
-            if(members.isEmpty()) {
+            if (members.isEmpty()) {
                 throw new ResponseStatusException(HttpStatus.NOT_FOUND, "user isn't exist");
             }
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR ,"Can not get users");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Can not get users");
         }
         return members;
     }
@@ -155,7 +157,7 @@ public class AdminService {
         } catch (DataAccessException e) {
             return false;
         }
-        if(md.getPermission() < 2) {
+        if (md.getPermission() < 2) {
             boolean saveTeacherUserResult = saveTeacherUser(member.getId(), md.getPermission());
 
             if (!saveTeacherUserResult) {
@@ -167,24 +169,48 @@ public class AdminService {
     }
 
     public Boolean editSchoolTime(STDTO stdto) {
-        try {
-            SchoolTime isPeriod;
-            isPeriod = schoolRepository.findByPeriod(stdto.getPeriod());
-            if (isPeriod != null) {
-                isPeriod.setStartTime(convertToLocalTime(stdto.getStartTime(), "HH:mm"));
-                isPeriod.setEndTime(convertToLocalTime(stdto.getEndTime(), "HH:mm"));
+        SchoolTime isPeriod = schoolRepository.findByPeriod(stdto.getPeriod());
 
-                schoolRepository.save(isPeriod);
+        if (isPeriod != null) {
+            LocalTime startTime = parseLocalTime(stdto.getStartTime());
+            LocalTime endTime = parseLocalTime(stdto.getEndTime());
+
+            if (startTime != null && endTime != null) {
+                SchoolTime conflictingPeriod = schoolRepository.findByStartTimeAndEndTime(
+                        startTime,
+                        endTime
+                );
+
+                if (conflictingPeriod != null && !conflictingPeriod.getPeriod().equals(stdto.getPeriod())) {
+                    return false;
+                } else {
+                    try {
+                        isPeriod.setStartTime(startTime);
+                        isPeriod.setEndTime(endTime);
+
+                        schoolRepository.save(isPeriod);
+                        return true;
+                    } catch (Exception e) {
+                        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "DB에 값을 저장하는 도중 에러 발생");
+                    }
+                }
             } else {
                 return false;
             }
-            return true;
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR ,"DB에 값을 저장하는 도중 에러 발생");
+        } else {
+            return false;
         }
     }
 
-    public Boolean deleteSchoolTime(STDTO stdto) {
+    protected LocalTime parseLocalTime(String timeString) {
+        try {
+            return LocalTime.parse(timeString, DateTimeFormatter.ofPattern("HH:mm"));
+        } catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    public Boolean deleteSchoolTime(STDTO stdto)     {
         try {
             Optional<SchoolTime> isTime = schoolRepository.findById(stdto.getId());
             if(isTime.isEmpty()) {

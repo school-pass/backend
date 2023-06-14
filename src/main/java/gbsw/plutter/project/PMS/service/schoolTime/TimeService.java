@@ -6,7 +6,9 @@ import gbsw.plutter.project.PMS.repository.PlaceRepository;
 import gbsw.plutter.project.PMS.repository.SchoolTimeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 
@@ -16,16 +18,16 @@ import javax.transaction.Transactional;
 @RequiredArgsConstructor
 public class TimeService {
     private final SchoolTimeRepository schoolTimeRepository;
-    public SchoolTime findTimeByPeriod(STDTO stdto) throws Exception {
-        try {
+    public SchoolTime findTimeByPeriod(Integer period) {
             SchoolTime school;
-            school = schoolTimeRepository.findByPeriod(stdto.getPeriod());
+            school = schoolTimeRepository.findByPeriod(period);
             if(school == null) {
-                throw new Exception("해당하는 교시를 가진 시간표가 없습니다.");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND,"해당하는 교시를 가진 시간표가 없습니다.");
             }
+        try {
             return school;
         } catch (Exception e) {
-            throw new Exception("에러 발생");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,"에러 발생");
         }
     }
 }
