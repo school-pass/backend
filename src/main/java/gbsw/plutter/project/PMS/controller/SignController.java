@@ -15,7 +15,7 @@ public class SignController {
     private final SignService signService;
 
     @PostMapping("/login")
-    public ResponseEntity<MemberDTO> login(@RequestBody SignRequest sign) throws Exception {
+    public ResponseEntity<MemberDTO> login(@RequestBody SignRequest sign) {
         return new ResponseEntity<>(signService.login(sign), HttpStatus.OK);
     }
 }

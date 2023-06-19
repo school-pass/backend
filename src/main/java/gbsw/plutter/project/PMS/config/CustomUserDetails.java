@@ -1,11 +1,13 @@
 package gbsw.plutter.project.PMS.config;
 
+import gbsw.plutter.project.PMS.model.Authority;
 import gbsw.plutter.project.PMS.model.Member;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class CustomUserDetails implements UserDetails {
@@ -22,9 +24,10 @@ public class CustomUserDetails implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return member.getRoles().stream().map(o -> new SimpleGrantedAuthority(
-                o.getName()
-        )).collect(Collectors.toList());
+        List<Authority> authorities = member.getAuthorities();
+        return authorities.stream()
+                .map(authority -> new SimpleGrantedAuthority(authority.getName()))
+                .collect(Collectors.toList());
     }
 
     @Override

@@ -27,9 +27,10 @@ public class Member {
     private String account;
     @OneToMany(mappedBy = "member", fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @Builder.Default
-    private List<Authority> roles = new ArrayList<>();
-    public void setRoles(List<Authority> role) {
-        this.roles = role;
-        role.forEach(o -> o.setMember(this));
+    private List<Authority> authorities = new ArrayList<>();
+
+    public void addAuthority(Authority authority) {
+        authorities.add(authority);
+        authority.setMember(this);
     }
 }

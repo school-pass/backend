@@ -27,7 +27,7 @@ public class UserController {
         try {
             modedMember.put("id", member.getId());
             modedMember.put("name", member.getName());
-            modedMember.put("roles", getRolesAsString(member.getRoles()));
+            modedMember.put("roles", getRolesAsString(member.getAuthorities())); // 수정된 부분
             modedMember.put("account", member.getAccount());
             modedMember.put("serialNum", member.getSerialNumber());
         } catch (Exception e) {
@@ -36,9 +36,12 @@ public class UserController {
         return modedMember;
     }
 
-    private String getRolesAsString(List<Authority> roles) {
-        List<String> roleNames = roles.stream().map(Authority::getName).collect(Collectors.toList());
-        return String.join(",", roleNames);
+    private List<String> getRolesAsString(List<Authority> authorities) { // 추가된 메서드
+        List<String> roles = new ArrayList<>();
+        for (Authority authority : authorities) {
+            roles.add(authority.getName());
+        }
+        return roles;
     }
 
     @GetMapping("/list")
@@ -52,8 +55,8 @@ public class UserController {
                 modifiedList.put("name", member.getName());
 
                 // Extracting the role names
-                List<String> roleNames = member.getRoles().stream()
-                        .map(role -> role.getName())
+                List<String> roleNames = member.getAuthorities().stream()
+                        .map(authority -> authority.getName())
                         .collect(Collectors.toList());
 
                 if (!roleNames.isEmpty()) {
@@ -68,7 +71,8 @@ public class UserController {
             }
             return new ResponseEntity<>(modedMemberList, HttpStatus.OK);
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"잘못된 요청입니다.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
         }
     }
+
 }

@@ -5,10 +5,7 @@ import gbsw.plutter.project.PMS.dto.PlaceDTO;
 import gbsw.plutter.project.PMS.dto.STDTO;
 import gbsw.plutter.project.PMS.dto.SignRequest;
 import gbsw.plutter.project.PMS.model.*;
-import gbsw.plutter.project.PMS.repository.MemberRepository;
-import gbsw.plutter.project.PMS.repository.PlaceRepository;
-import gbsw.plutter.project.PMS.repository.SchoolTimeRepository;
-import gbsw.plutter.project.PMS.repository.TeacherRepository;
+import gbsw.plutter.project.PMS.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataAccessException;
@@ -36,13 +33,14 @@ public class AdminService {
     private final TeacherRepository teacherRepository;
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AuthorityRepository authorityRepository;
     private final SchoolTimeRepository schoolRepository;
 
     //todo
     public boolean addUser(SignRequest request) {
         Optional<Member> isMember = memberRepository.findBySerialNumber(request.getSerialNum());
         if (isMember.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "해당하는 시리얼넘버를 가진 유저가 이미 존재합니다.\n serialNum : " + request.getSerialNum());
+            return false;
         }
         try {
             Member member = Member.builder()
@@ -53,18 +51,21 @@ public class AdminService {
                     .build();
 
             if (request.getPermission().equals(0)) {
-                member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_ADMIN").build()));
+                Authority adminAuthority = Authority.builder().name("ROLE_ADMIN").build();
+                member.addAuthority(adminAuthority);
             } else if (request.getPermission().equals(1)) {
-                member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_TEACHER").build()));
+                Authority teacherAuthority = Authority.builder().name("ROLE_TEACHER").build();
+                member.addAuthority(teacherAuthority);
             } else if (request.getPermission().equals(2)) {
-                member.setRoles(Collections.singletonList(Authority.builder().name("ROLE_STUDENT").build()));
+                Authority studentAuthority = Authority.builder().name("ROLE_STUDENT").build();
+                member.addAuthority(studentAuthority);
             }
 
             memberRepository.save(member);
-            Member mId = memberRepository.findMemberByAccount(request.getAccount());
-            saveTeacherUser(mId.getId(), request.getPermission());
+            Member savedMember = memberRepository.findMemberByAccount(request.getAccount());
+            saveTeacherUser(savedMember.getId(), request.getPermission());
         } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "DB에 값을 저장하는 도중 에러 발생");
+            return false;
         }
         return true;
     }
@@ -140,20 +141,29 @@ public class AdminService {
             return false;
         }
         Member member = memberRepository.findMemberById(md.getId());
+        Authority authority = authorityRepository.findAuthorityByMember(member);
+        String isRole = authority.getName();
+        if(isRole.equals("ROLE_TEACHER") || isRole.equals("ROLE_ADMIN")) {
+            if (md.getPermission() == 2) {
+                teacherRepository.deleteTeacherByMember_Id(member.getId());
+                authorityRepository.deleteAuthoritiesByMemberId(member.getId());
+            }
+        }
         try {
             member.setName(md.getName());
             member.setSerialNumber(md.getSerialNum());
-            List<Authority> roles = new ArrayList<>();
             if (md.getPermission() == 0) {
-                roles.add(Authority.builder().name("ROLE_ADMIN").build());
+                Authority adminAuthority = Authority.builder().name("ROLE_ADMIN").build();
+                member.addAuthority(adminAuthority);
             } else if (md.getPermission() == 1) {
-                roles.add(Authority.builder().name("ROLE_TEACHER").build());
+                Authority teacherAuthority = Authority.builder().name("ROLE_TEACHER").build();
+                member.addAuthority(teacherAuthority);
             } else if (md.getPermission() == 2) {
-                roles.add(Authority.builder().name("ROLE_STUDENT").build());
+                Authority studentAuthority = Authority.builder().name("ROLE_STUDENT").build();
+                member.addAuthority(studentAuthority);
             }
-            member.setRoles(roles);
-
-            memberRepository.save(member);
+//            saveTeacherUser(member.getId(), md.getPermission());
+//            memberRepository.save(member);
         } catch (DataAccessException e) {
             return false;
         }
@@ -167,6 +177,7 @@ public class AdminService {
         }
         return true;
     }
+
 
     public Boolean editSchoolTime(STDTO stdto) {
         SchoolTime isPeriod = schoolRepository.findByPeriod(stdto.getPeriod());
@@ -257,15 +268,25 @@ public class AdminService {
         }
         Optional<Member> isMember = memberRepository.findById(id);
         if(isMember.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+            return false;
         }
         try {
-            Teacher teacher = Teacher.builder()
-                    .member(isMember.get())
-                    .name(isMember.get().getName())
-                    .serialNum(isMember.get().getSerialNumber())
-                    .tpermission(Tpermission.valueOf(T_Permission))
-                    .build();
+            Teacher teacher;
+            Optional<Teacher> isTeacher = teacherRepository.findTeacherByMember_Id(id);
+            if(isTeacher.isEmpty()) {
+                teacher = Teacher.builder()
+                        .member(isMember.get())
+                        .serialNum(isMember.get().getSerialNumber())
+                        .name(isMember.get().getName())
+                        .tpermission(Tpermission.valueOf(T_Permission))
+                        .build();
+            } else {
+                teacher = isTeacher.get();
+                teacher.setTpermission(Tpermission.valueOf(T_Permission));
+                teacher.setName(isMember.get().getName());
+                teacher.setSerialNum(isMember.get().getSerialNumber());
+            }
+
             teacherRepository.save(teacher);
         } catch (Exception e){
             return false;

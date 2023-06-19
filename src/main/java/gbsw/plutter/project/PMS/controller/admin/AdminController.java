@@ -13,7 +13,6 @@ import gbsw.plutter.project.PMS.repository.SchoolTimeRepository;
 import gbsw.plutter.project.PMS.repository.TeacherRepository;
 import gbsw.plutter.project.PMS.service.admin.AdminService;
 import gbsw.plutter.project.PMS.service.place.PlaceService;
-import io.swagger.models.auth.In;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -38,19 +37,35 @@ public class AdminController {
     private final PlaceService placeService;
     private final TeacherRepository teacherRepository;
 
-    // ...
-
     @PostMapping("/addUser")
-    public ResponseEntity<Boolean> addUser(@RequestBody SignRequest req) {
-        Optional<Member> serNum = memberRepository.findBySerialNumber(req.getSerialNum());
-        if (serNum.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "User already exists for serialNum: " + req.getSerialNum());
+    public ResponseEntity<Map<String, List<String>>> addUser(@RequestBody List<SignRequest> reqs) {
+        List<String> successAccount = new ArrayList<>();
+        List<String> failedAccount = new ArrayList<>();
+
+        for(SignRequest req : reqs ){
+            Optional<Member> isUser = memberRepository.findBySerialNumber(req.getSerialNum());
+            if(isUser.isEmpty()) {
+                boolean isSuccess = adminService.addUser(req);
+                if(isSuccess) {
+                    successAccount.add(req.getAccount());
+                } else {
+                    failedAccount.add(req.getAccount());
+                }
+            } else {
+                failedAccount.add(req.getAccount());
+            }
         }
         try {
-            return new ResponseEntity<>(adminService.addUser(req), HttpStatus.OK);
+            Map<String, List<String>> response = new HashMap<>();
+            if(!successAccount.isEmpty()) {
+                response.put("successAccounts", successAccount);
+            }
+            if(!failedAccount.isEmpty()) {
+                response.put("failedAccounts", failedAccount);
+            }
+            return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Error occurred while adding user", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to add user");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "사용자를 추가하지 못 했습니다.");
         }
     }
 
@@ -137,7 +152,7 @@ public class AdminController {
                     failedIds.add(md.getId());
                 }
             } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User Not Found For SerialNum: " + md.getSerialNum());
+                failedIds.add(md.getId());
             }
         }
         try {

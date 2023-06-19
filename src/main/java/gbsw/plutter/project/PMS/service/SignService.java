@@ -10,9 +10,11 @@ import gbsw.plutter.project.PMS.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 import java.util.Collections;
@@ -23,29 +25,26 @@ import java.util.Collections;
 public class SignService {
     private final MemberRepository memberRepository;
     private final PasswordEncoder passwordEncoder;
-    @Autowired
     private final JwtProvider jwtProvider;
-    public MemberDTO login(SignRequest request) throws Exception {
+
+    public MemberDTO login(SignRequest request) {
+        Member member = memberRepository.findByAccount(request.getAccount()).orElseThrow(() ->
+                new BadCredentialsException("잘못된 계정정보입니다."));
+
+        if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
+            throw new BadCredentialsException("잘못된 계정정보입니다.");
+        }
         try {
-            Member member = memberRepository.findByAccount(request.getAccount()).orElseThrow(() ->
-                    new BadCredentialsException("잘못된 계정정보입니다."));
-
-            if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-                throw new BadCredentialsException("잘못된 계정정보입니다.");
-            }
-
             return MemberDTO.builder()
                     .id(member.getId())
                     .account(member.getAccount())
                     .name(member.getName())
                     .serialNum(member.getSerialNumber())
-                    .roles(member.getRoles())
-                    .token(jwtProvider.createToken(member.getId().toString(), member.getAccount(), member.getRoles()))
+                    .roles(Collections.singletonList((Authority) member.getAuthorities()))
+                    .token(jwtProvider.createToken(member.getId().toString(), member.getAccount(), member.getAuthorities()))
                     .build();
         } catch (Exception e) {
-          e.printStackTrace();
-          throw new Exception();
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "로그인에 실패했습니다.");
         }
     }
-
 }

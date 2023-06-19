@@ -18,6 +18,7 @@ public class Authority {
     @JsonIgnore
     private Long id;
 
+    @Column()
     private String name;
 
     @JoinColumn(name = "member")
@@ -27,5 +28,8 @@ public class Authority {
 
     public void setMember(Member member) {
         this.member = member;
+        if (!member.getAuthorities().contains(this)) {
+            member.getAuthorities().add(this);
+        }
     }
 }
