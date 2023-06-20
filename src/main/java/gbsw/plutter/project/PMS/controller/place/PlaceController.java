@@ -54,11 +54,6 @@ public class PlaceController {
         }
     }
 
-//    @PostMapping("/teacher")
-//    public ResponseEntity<List<Map<String, Object>>> findPlaceByTeacherId(@RequestBody PlaceDTO pd) {
-//        List<Place> places = placeService.findPlaceByTeacherId(pd.getTeacherId());
-//    }
-
     @PostMapping("/detail")
     public ResponseEntity<List<Map<String, Object>>> getPlaceByLocation(@RequestBody PlaceDTO pd) {
         List<Place> places = placeService.getPlaceByLocation(pd.getLocation());

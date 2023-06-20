@@ -70,12 +70,28 @@ public class AdminController {
     }
 
     @PostMapping("/addTime")
-    public ResponseEntity<Boolean> addTime(@RequestBody STDTO stdto) {
+    public ResponseEntity<Map<String, List<Integer>>> addTime(@RequestBody List<STDTO> stdtos) {
+        List<Integer> successIds = new ArrayList<>();
+        List<Integer> failedIds = new ArrayList<>();
         try {
-            return new ResponseEntity<>(adminService.addSchoolTime(stdto), HttpStatus.OK);
+            for(STDTO stdto : stdtos) {
+                boolean isSuccess = adminService.addSchoolTime(stdto);
+                if(isSuccess) {
+                    successIds.add(stdto.getPeriod());
+                } else {
+                    failedIds.add(stdto.getPeriod());
+                }
+            }
+            Map<String, List<Integer>> res = new HashMap<>();
+            if(!successIds.isEmpty()) {
+                res.put("successIds", successIds);
+            }
+            if(!failedIds.isEmpty()) {
+                res.put("failedIds", failedIds);
+            }
+            return new ResponseEntity<>(res, HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Error occurred while adding school time", e);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to add school time");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "시간표 추가에 실패했습니다.");
         }
     }
 
@@ -217,19 +233,33 @@ public class AdminController {
         try {
             return new ResponseEntity<>(placeService.editPlace(pd), HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Error occurred while editing place", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to edit place");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "장소 수정에 실패했습니다.");
         }
     }
 
     @DeleteMapping("/deletePlace")
-    public ResponseEntity<Boolean> deletePlace(@RequestBody PlaceDTO pd) {
+    public ResponseEntity<Map<String, List<Long>>> deletePlace(@RequestBody List<PlaceDTO> pds) {
+        List<Long> successIds = new ArrayList<>();
+        List<Long> failedIds = new ArrayList<>();
         try {
-            return new ResponseEntity<>(placeService.deletePlace(pd), HttpStatus.OK);
+            for(PlaceDTO pd : pds) {
+                boolean isSuccess = placeService.deletePlace(pd);
+                if(isSuccess) {
+                    successIds.add(pd.getId());
+                } else {
+                    failedIds.add(pd.getId());
+                }
+            }
+            Map<String, List<Long>> res = new HashMap<>();
+            if(!successIds.isEmpty()) {
+                res.put("successIds", successIds);
+            }
+            if(!failedIds.isEmpty()) {
+                res.put("failedIds", failedIds);
+            }
+            return new ResponseEntity<>(res, HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Error occurred while deleting place", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete place");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"장소 삭제에 실패했습니다.");
         }
     }
 }
-

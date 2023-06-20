@@ -98,13 +98,12 @@ public class PlaceService {
         try {
             Optional<Place> place = placeRepository.findById(pd.getId());
             if (place.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Place not found");
+                return false;
             }
             placeRepository.deleteById(pd.getId());
             return true;
         } catch (Exception e) {
-            log.error("Error occurred while deleting place", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete place");
+            return false;
         }
     }
 }
