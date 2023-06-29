@@ -22,8 +22,6 @@ public class PassDTO {
     private Integer endPeriod;
     private Integer confirm;
     private String placeIp;
-    @JsonProperty("IMEI")
-    private String IMEI;
     private PassStatus passStatus;
     private String passPlace;
     private LocalDate createdAt;

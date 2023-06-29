@@ -11,24 +11,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @Slf4j
 @RequiredArgsConstructor
-@RequestMapping("pass")
+@RequestMapping("/pass")
 public class PassController {
     private final PassService passService;
     private final PassRepository passRepository;
-    private final MemberRepository memberRepository;
-    private final PlaceRepository placeRepository;
-    private final TeacherRepository teacherRepository;
     private final SchoolTimeRepository schoolTimeRepository;
 
     public LocalDateTime[] conversionPeriod(Integer startPeriod, Integer endPeriod) {
@@ -51,41 +47,17 @@ public class PassController {
     }
     @PostMapping("/add")
     public ResponseEntity<Boolean> addPass(@RequestBody PassDTO pd) {
-            Optional<Member> mId;
-            Optional<Place> particular;
-            Optional<Teacher> tId;
-            mId = memberRepository.findById(pd.getUserId());
-            if(mId.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID : "+pd.getUserId()+"를 가진 유저가 존재하지 않습니다.");
-            }
-            particular = placeRepository.findByLocationDetail(pd.getDetail());
-            if(particular.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, pd.getDetail()+"인 장소가 존재하지 않습니다.");
-            }
-            //장소로 선생님 찾기
-            tId = teacherRepository.findById(particular.get().getTeacher().getId());
-            if(tId.isEmpty()) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID : "+pd.getTeacherId()+"를 가진 교사가 존재하지 않습니다.");
-            }
-        try {
-            return new ResponseEntity<>(passService.addPass(pd, particular, mId, tId), HttpStatus.OK);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "출입증을 신청하지 못했습니다.");
-        }
+        return new ResponseEntity<>(passService.addPass(pd), HttpStatus.OK);
     }
 
     @PostMapping("/apply")
-    public ResponseEntity<Boolean> applyPass(@RequestBody PassDTO pd) throws Exception {
-        try {
-            Optional<Pass> isPass;
-            isPass = passRepository.findById(pd.getPassId());
-            if(isPass.isEmpty()) {
-                throw new Exception("ID : "+pd.getPassId()+"를 가진 출입증이 존재하지 않습니다.");
-            }
-            return new ResponseEntity<>(passService.applyPass(pd), HttpStatus.OK);
-        } catch (Exception e) {
-            throw new Exception("출입증 승인/반려 중 에러가 발생했습니다. 원인 : " + e.getMessage());
+    public ResponseEntity<Boolean> applyPass(@RequestBody PassDTO pd) {
+        Optional<Pass> isPass;
+        isPass = passRepository.findById(pd.getPassId());
+        if(isPass.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID : "+pd.getPassId()+"를 가진 출입증이 존재하지 않습니다.");
         }
+        return new ResponseEntity<>(passService.applyPass(pd), HttpStatus.OK);
     }
 
     @PostMapping("/use")
@@ -128,26 +100,81 @@ public class PassController {
         return new ResponseEntity<>(modifiedPassList, HttpStatus.OK);
     }
 
-    @GetMapping("/teacherList")
-    public ResponseEntity<List<Pass>> findAllPassStatusEqualsRequested() {
-        try {
-            List<Pass> result = passService.findAllPassStatusEqualsRequested();
-            return new ResponseEntity<>(result, HttpStatus.OK);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
-        }
-    }
+//    @GetMapping("/teacherList")
+//    public ResponseEntity<List<Pass>> findAllPassStatusEqualsRequested() {
+//        try {
+//            List<Pass> result = passService.findAllPassStatusEqualsRequested();
+//            return new ResponseEntity<>(result, HttpStatus.OK);
+//        } catch (Exception e) {
+//            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
+//        }
+//    }
 
     //5분마다 여기로 요청을 보내면 userId
-    @PostMapping("")
+    @PostMapping("/check")
     public void checkPassesValid() {
-
+        passService.checkPass();
     }
 
-//    @GetMapping("/studentList")
-//    public ResponseEntity<List<Pass>> findAllPassStatusEqualsRequested() {
-//
-//    }
+    @GetMapping("/studentList")
+    public ResponseEntity<List<Map<String, Object>>> findAllPassStatusEqualsRequested() {
+        List<Pass> passes = passService.getStudentList();
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (Pass pass : passes) {
+            Map<String, Object> passMap = new HashMap<>();
+
+            // Member 정보
+            Member member = pass.getMember();
+            passMap.put("id", pass.getId());
+            passMap.put("memberId", member.getId());
+            passMap.put("grade", member.getGrade());
+            passMap.put("classes", member.getClasses());
+            passMap.put("number", member.getNumber());
+            passMap.put("studentName", member.getName());
+            passMap.put("studentSerialNumber", member.getSerialNumber());
+            passMap.put("account", member.getAccount());
+
+            // Student Role
+            List<String> studentRoles = member.getAuthorities()
+                    .stream()
+                    .map(authority -> authority.getName())
+                    .collect(Collectors.toList());
+            passMap.put("studentRole", studentRoles.get(0));
+
+            // Teacher 정보
+            Teacher teacher = pass.getTeacher();
+            passMap.put("teacher", teacher.getId());
+            passMap.put("TeacherSerialNumber", teacher.getSerialNum());
+            passMap.put("teacherName", teacher.getName());
+            passMap.put("teacherRole", teacher.getTpermission());
+
+            // Place 정보
+            Place place = pass.getPlace();
+            passMap.put("place", place.getId());
+            passMap.put("placeTeacherId", place.getTeacher().getId());
+            passMap.put("ipAddress", place.getIpAddress());
+            passMap.put("capacityNow", place.getCapacity());
+            passMap.put("maxCapacity", place.getMaxCapacity());
+            passMap.put("location", place.getLocation());
+            passMap.put("floor", place.getFloor());
+            passMap.put("locationDetail", place.getLocationDetail());
+
+            // 나머지 필드
+            passMap.put("passReason", pass.getPassReason());
+            passMap.put("startPeriod", pass.getStartPeriod());
+            passMap.put("endPeriod", pass.getEndPeriod());
+            passMap.put("passStatus", pass.getPassStatus());
+            passMap.put("serialNumber", pass.getSerialNumber());
+            passMap.put("createdAt", pass.getCreatedAt());
+            passMap.put("updatedAt", pass.getUpdatedAt());
+
+            response.add(passMap);
+        }
+
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
 
     @GetMapping("/list")
     public ResponseEntity<List<Map<String, Object>>> getAllPass() throws Exception {

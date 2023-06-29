@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 import javax.transaction.Transactional;
+import java.util.List;
 
 @Transactional
 public interface AuthorityRepository extends JpaRepository<Authority, Long> {
@@ -17,4 +18,6 @@ public interface AuthorityRepository extends JpaRepository<Authority, Long> {
     void deleteAuthoritiesByMemberId(Long memberId);
 
     Authority findAuthorityByMember(Member member);
+
+    List<Authority> findAuthoritiesByName(String name);
 }

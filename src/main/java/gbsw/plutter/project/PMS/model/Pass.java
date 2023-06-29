@@ -40,8 +40,8 @@ public class Pass {
     @Column(nullable = false)
     private PassStatus passStatus;
 
-    @Column(name = "IMEI")
-    private String IMEI;
+    @Column(name = "serialNumber")
+    private String serialNumber;
 
     @Column(name = "createdAt")
     private LocalDateTime createdAt;
