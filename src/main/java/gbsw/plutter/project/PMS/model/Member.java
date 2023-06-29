@@ -18,6 +18,12 @@ public class Member {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column()
+    private Integer grade;
+    @Column()
+    private Integer classes;
+    @Column()
+    private Integer number;
+    @Column()
     private String name;
     @Column(nullable = false)
     private String serialNumber;

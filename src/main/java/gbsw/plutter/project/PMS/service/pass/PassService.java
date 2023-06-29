@@ -2,13 +2,12 @@ package gbsw.plutter.project.PMS.service.pass;
 
 import gbsw.plutter.project.PMS.dto.PassDTO;
 import gbsw.plutter.project.PMS.model.*;
-import gbsw.plutter.project.PMS.repository.PassRepository;
-import gbsw.plutter.project.PMS.repository.PlaceRepository;
-import gbsw.plutter.project.PMS.repository.SchoolTimeRepository;
-import gbsw.plutter.project.PMS.repository.TeacherRepository;
+import gbsw.plutter.project.PMS.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.transaction.Transactional;
 import java.time.DayOfWeek;
@@ -24,11 +23,11 @@ import java.util.*;
 public class PassService {
     private final PassRepository passRepository;
     private final PlaceRepository placeRepository;
+    private final MemberRepository memberRepository;
     private final TeacherRepository teacherRepository;
     private final SchoolTimeRepository schoolTimeRepository;
 
-    public Boolean addPass(PassDTO pd, Optional<Place> particular, Optional<Member> mId, Optional<Teacher> tId) throws Exception {
-        try {
+    public Boolean addPass(PassDTO pd, Optional<Place> particular, Optional<Member> mId, Optional<Teacher> tId) {
             LocalDateTime now = LocalDateTime.now();
             DayOfWeek dayOfWeek = now.getDayOfWeek();
             LocalDateTime limitTime;
@@ -40,23 +39,22 @@ public class PassService {
             }
 
             if (now.isAfter(limitTime)) {
-                throw new Exception("출입증 신청 도중 오류 발생");
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "이미 만료된 출입증입니다.");
             }
-
+        try {
             Pass pass = Pass.builder()
                     .place(particular.get())
                     .member(mId.get())
                     .teacher(tId.get())
-                    .IMEI(pd.getIMEI())
                     .passReason(pd.getPassReason())
                     .startPeriod(pd.getStartPeriod())
                     .endPeriod(pd.getEndPeriod())
-                    .passStatus(PassStatus.valueOf("REQUESTED"))
+                    .passStatus(PassStatus.REQUESTED)
                     .createdAt(now)
                     .build();
             passRepository.save(pass);
         } catch (Exception e) {
-            throw new Exception("출입증 신청 도중 오류 발생");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "출입증 신청 도중 오류 발생");
         }
         return true;
     }
@@ -102,17 +100,47 @@ public class PassService {
         }
     }
 
-    public Pass findByIMEI(PassDTO pd) throws Exception {
+    public List<Pass> findByUserId(PassDTO pd) {
+        List<Pass> passes = passRepository.findAll();
+        List<Pass> filteredPasses = new ArrayList<>();
+        LocalDateTime currentDateTime = LocalDateTime.now();
+        Member member = memberRepository.findMemberById(pd.getUserId());
+        if(member == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "해당하는 ID를 가진 유저를 찾지 못 했습니다.");
+        }
+        Pass isPass = passRepository.findPassByMember(member);
+        if (isPass == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "해당하는 IMEI를 가진 출입증을 찾지 못 했습니다.");
+        }
         try {
-            Pass pass = passRepository.findPassByIMEI(pd.getIMEI());
-            if (pass == null) {
-                throw new Exception("해당하는 IMEI를 가진 출입증을 찾지 못 했습니다.");
+            for (Pass pass : passes) {
+                SchoolTime scTime = schoolTimeRepository.findByPeriod(pass.getEndPeriod());
+                if (pass.getPassStatus().equals(PassStatus.REQUESTED) && scTime.getEndTime().isAfter(LocalTime.from(currentDateTime))) {
+                    filteredPasses.add(pass);
+                }
             }
-            return pass;
+
+            return filteredPasses;
         } catch (Exception e) {
-            throw new Exception("알 수 없는 오류가 발생하였습니다. 다시 시도해주세요");
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "알 수 없는 오류가 발생하였습니다. 다시 시도해주세요");
         }
     }
+
+    public List<Pass> findAllPassStatusEqualsRequested() {
+        List<Pass> passes = passRepository.findAll();
+        List<Pass> filteredPasses = new ArrayList<>();
+        LocalDateTime currentDateTime = LocalDateTime.now();
+
+        for (Pass pass : passes) {
+            SchoolTime scTime = schoolTimeRepository.findByPeriod(pass.getEndPeriod());
+            if (pass.getPassStatus().equals(PassStatus.REQUESTED) && scTime.getEndTime().isAfter(LocalTime.from(currentDateTime))) {
+                filteredPasses.add(pass);
+            }
+        }
+
+        return filteredPasses;
+    }
+
 
     public Boolean validPass(PassDTO pd) throws Exception {
         try {

@@ -37,33 +37,42 @@ public class AdminService {
     private final SchoolTimeRepository schoolRepository;
 
     //todo
-    public boolean addUser(SignRequest request) {
-        Optional<Member> isMember = memberRepository.findBySerialNumber(request.getSerialNum());
+    public boolean addUser(MemberDTO md) {
+        Optional<Member> isMember = memberRepository.findBySerialNumber(md.getSerialNum());
         if (isMember.isPresent()) {
             return false;
         }
+        if(md.getPermission().equals(2)){
+            Optional<Member> isConflict = memberRepository.findMemberByGradeAndClassesAndNumber(md.getGrade(), md.getClasses(), md.getNumber());
+            if (isConflict.isPresent()) {
+                return false;
+            }
+        }
         try {
             Member member = Member.builder()
-                    .account(request.getAccount())
-                    .password(passwordEncoder.encode(request.getPassword()))
-                    .name(request.getName())
-                    .serialNumber(request.getSerialNum())
+                    .account(md.getAccount())
+                    .grade(md.getGrade())
+                    .classes(md.getClasses())
+                    .number(md.getPermission() < 2 ? null : md.getNumber()) // 수정된 부분
+                    .password(passwordEncoder.encode(md.getPassword()))
+                    .name(md.getName())
+                    .serialNumber(md.getSerialNum())
                     .build();
 
-            if (request.getPermission().equals(0)) {
+            if (md.getPermission().equals(0)) {
                 Authority adminAuthority = Authority.builder().name("ROLE_ADMIN").build();
                 member.addAuthority(adminAuthority);
-            } else if (request.getPermission().equals(1)) {
+            } else if (md.getPermission().equals(1)) {
                 Authority teacherAuthority = Authority.builder().name("ROLE_TEACHER").build();
                 member.addAuthority(teacherAuthority);
-            } else if (request.getPermission().equals(2)) {
+            } else if (md.getPermission().equals(2)) {
                 Authority studentAuthority = Authority.builder().name("ROLE_STUDENT").build();
                 member.addAuthority(studentAuthority);
             }
 
             memberRepository.save(member);
-            Member savedMember = memberRepository.findMemberByAccount(request.getAccount());
-            saveTeacherUser(savedMember.getId(), request.getPermission());
+            Member savedMember = memberRepository.findMemberByAccount(md.getAccount());
+            saveTeacherUser(savedMember.getId(), md.getPermission());
         } catch (Exception e) {
             return false;
         }
@@ -136,8 +145,13 @@ public class AdminService {
 
     //pass
     public boolean updateUser(MemberDTO md) {
-        Optional<Member> isMember = memberRepository.findBySerialNumber(md.getSerialNum());
+        Optional<Member> isMember = memberRepository.findById(md.getId());
         if (isMember.isPresent() && !isMember.get().getId().equals(md.getId())) {
+            return false;
+        }
+        Optional<Teacher> teacher = teacherRepository.findTeacherByMember_Id(isMember.get().getId());
+        Optional<List<Place>> isPlace = placeRepository.findAllByTeacher(teacher.get());
+        if(isPlace.isPresent()) {
             return false;
         }
         Member member = memberRepository.findMemberById(md.getId());
@@ -145,13 +159,16 @@ public class AdminService {
         String isRole = authority.getName();
         if(isRole.equals("ROLE_TEACHER") || isRole.equals("ROLE_ADMIN")) {
             if (md.getPermission() == 2) {
-                teacherRepository.deleteTeacherByMember_Id(member.getId());
+                teacherRepository.delete(teacher.get());
                 authorityRepository.deleteAuthoritiesByMemberId(member.getId());
             }
         }
         try {
             member.setName(md.getName());
             member.setSerialNumber(md.getSerialNum());
+            member.setGrade(md.getGrade());
+            member.setClasses(md.getClasses());
+            member.setNumber(md.getNumber() < 2 ? null :md.getNumber());
             if (md.getPermission() == 0) {
                 Authority adminAuthority = Authority.builder().name("ROLE_ADMIN").build();
                 member.addAuthority(adminAuthority);
@@ -162,8 +179,8 @@ public class AdminService {
                 Authority studentAuthority = Authority.builder().name("ROLE_STUDENT").build();
                 member.addAuthority(studentAuthority);
             }
-//            saveTeacherUser(member.getId(), md.getPermission());
-//            memberRepository.save(member);
+            saveTeacherUser(member.getId(), md.getPermission());
+            memberRepository.save(member);
         } catch (DataAccessException e) {
             return false;
         }
@@ -233,15 +250,46 @@ public class AdminService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR ,"DB에서 값을 삭제하는 도중 에러 발생");
         }
     }
-    public Boolean deleteUser(MemberDTO md) throws Exception {
-        try{
-            memberRepository.deleteById(md.getId());
+    public Boolean deleteUser(MemberDTO md) {
+        Optional<Member> member = memberRepository.findById(md.getId());
+        Optional<Teacher> teacher = teacherRepository.findTeacherByMember_Id(md.getId());
+        List<Place> places = null;
+
+        if (teacher.isPresent()) {
+            places = placeRepository.findPlacesByTeacher(teacher.get());
+        }
+
+        if (member.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "해당하는 ID를 가진 사용자를 찾을 수 없습니다.");
+        }
+
+        if (places != null && !places.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "해당하는 ID를 가진 교사가 담당하는 장소를 삭제하거나 교사를 변경해주십시오.");
+        }
+
+        try {
+            if (member.get().getAuthorities().stream().anyMatch(authority -> authority.getName().equals("ROLE_STUDENT"))) {
+                memberRepository.delete(member.get());
+            } else {
+                teacher.ifPresent(teacherRepository::delete);
+                memberRepository.delete(member.get());
+            }
         } catch (Exception e) {
-            throw new Exception("500 Server Error"); 
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "사용자를 삭제하는 도중 에러 발생");
         }
         return true;
     }
-    public Boolean addPlace(PlaceDTO placeDTO, Optional<Teacher> tId) throws Exception {
+
+
+    public Boolean addPlace(PlaceDTO placeDTO, Optional<Teacher> tId) {
+        Place isIpaddress = placeRepository.findPlaceByIpAddress(placeDTO.getIpAddress());
+        if(isIpaddress != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 해당하는 IP주소를 가진 장소가 존재합니다.");
+        }
+        Optional<Place> isPlace = placeRepository.findPlaceByLocationAndLocationDetail(placeDTO.getLocation(), placeDTO.getDetail());
+        if(isPlace.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, placeDTO.getLocation()+"에 "+placeDTO.getDetail()+"가 이미 존재합니다.");
+        }
         try {
         Place place = Place.builder()
                     .teacher(tId.get())
@@ -254,8 +302,7 @@ public class AdminService {
                     .build();
         placeRepository.save(place);
         } catch (Exception e) {
-            e.printStackTrace();
-            throw new Exception();
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "DB에 값 저장하는 도중 에러가 발생했습니다.");
         }
         return true;
     }

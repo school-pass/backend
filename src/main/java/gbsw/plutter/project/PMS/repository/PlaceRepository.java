@@ -14,7 +14,11 @@ public interface PlaceRepository extends JpaRepository<Place, Long> {
 
     Optional<Place> findByLocationDetail(String detail);
 
+    Optional<Place> findPlaceByLocationAndLocationDetail(String location, String detail);
+
     Place findPlaceByIpAddress(String ipAddress);
 
     Optional<List<Place>> findAllByTeacher(Teacher teacher);
+
+    List<Place> findPlacesByTeacher(Teacher teacher);
 }

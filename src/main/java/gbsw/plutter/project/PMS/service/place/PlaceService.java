@@ -66,32 +66,31 @@ public class PlaceService {
         }
     }
     public Boolean editPlace(PlaceDTO pd) {
-        try {
-            Place place = placeRepository.findPlaceByIpAddress(pd.getIpAddress());
-            if (place != null) {
-                Teacher teacher = teacherRepository.findTeacherById(pd.getTeacherId());
-                if (teacher != null) {
-                    place.setTeacher(teacher);
-                    place.setFloor(pd.getFloor());
-                    place.setLocation(pd.getLocation());
-                    place.setLocationDetail(pd.getDetail());
-                    place.setIpAddress(pd.getIpAddress());
+        Optional<Teacher> isTeacher = Optional.ofNullable(teacherRepository.findTeacherByMember_Id(pd.getTeacherId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당하는 ID를 가진 교사를 찾을 수 없습니다.")));
+        Teacher teacher = isTeacher.get();
+        Optional<Place> isPlace = Optional.ofNullable(placeRepository.findById(pd.getId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "해당하는 ID를 가진 장소를 찾을 수 없습니다.")));
+        Place isIp = placeRepository.findPlaceByIpAddress(pd.getIpAddress());
 
-                    placeRepository.save(place);
-
-                    return true;
-                } else {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher not found");
-                }
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Place not found");
-            }
-        } catch (ResponseStatusException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("Error occurred while editing place", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to edit place");
+        if (isIp != null && !isIp.getId().equals(pd.getId())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "다른 장소에서 이미 같은 IP 주소를 사용하고 있습니다.");
         }
+
+        try {
+            Place place = isPlace.get();
+            place.setTeacher(teacher);
+            place.setFloor(pd.getFloor());
+            place.setLocation(pd.getLocation());
+            place.setLocationDetail(pd.getDetail());
+            place.setMaxCapacity(pd.getMaxCapacity());
+            place.setIpAddress(pd.getIpAddress());
+
+            placeRepository.save(place);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "DB에 값을 저장하는 도중 에러가 발생했습니다.");
+        }
+        return true;
     }
 
     public Boolean deletePlace(PlaceDTO pd) {
@@ -100,7 +99,7 @@ public class PlaceService {
             if (place.isEmpty()) {
                 return false;
             }
-            placeRepository.deleteById(pd.getId());
+            placeRepository.delete(place.get());
             return true;
         } catch (Exception e) {
             return false;

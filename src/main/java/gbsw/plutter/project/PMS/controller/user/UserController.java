@@ -27,7 +27,15 @@ public class UserController {
         try {
             modedMember.put("id", member.getId());
             modedMember.put("name", member.getName());
-            modedMember.put("roles", getRolesAsString(member.getAuthorities())); // 수정된 부분
+            List<String> roleNames = member.getAuthorities().stream()
+                    .map(authority -> authority.getName())
+                    .collect(Collectors.toList());
+
+            if (!roleNames.isEmpty()) {
+                modedMember.put("role", roleNames.get(0));
+            } else {
+                modedMember.put("role", null);
+            }
             modedMember.put("account", member.getAccount());
             modedMember.put("serialNum", member.getSerialNumber());
         } catch (Exception e) {

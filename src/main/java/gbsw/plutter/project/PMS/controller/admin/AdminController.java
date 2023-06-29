@@ -38,11 +38,11 @@ public class AdminController {
     private final TeacherRepository teacherRepository;
 
     @PostMapping("/addUser")
-    public ResponseEntity<Map<String, List<String>>> addUser(@RequestBody List<SignRequest> reqs) {
+    public ResponseEntity<Map<String, List<String>>> addUser(@RequestBody List<MemberDTO> reqs) {
         List<String> successAccount = new ArrayList<>();
         List<String> failedAccount = new ArrayList<>();
 
-        for(SignRequest req : reqs ){
+        for(MemberDTO req : reqs ){
             Optional<Member> isUser = memberRepository.findBySerialNumber(req.getSerialNum());
             if(isUser.isEmpty()) {
                 boolean isSuccess = adminService.addUser(req);
@@ -63,7 +63,7 @@ public class AdminController {
             if(!failedAccount.isEmpty()) {
                 response.put("failedAccounts", failedAccount);
             }
-            return new ResponseEntity<>(response, HttpStatus.OK);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "사용자를 추가하지 못 했습니다.");
         }
@@ -89,7 +89,7 @@ public class AdminController {
             if(!failedIds.isEmpty()) {
                 res.put("failedIds", failedIds);
             }
-            return new ResponseEntity<>(res, HttpStatus.OK);
+            return new ResponseEntity<>(res, HttpStatus.CREATED);
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "시간표 추가에 실패했습니다.");
         }
@@ -147,7 +147,6 @@ public class AdminController {
             }
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Error occurred while deleting school time", e);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to delete school time");
         }
     }
@@ -181,60 +180,36 @@ public class AdminController {
             }
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
-            log.error("Error occurred while editing user", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to edit user");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Failed to edit user");
         }
     }
 
     //pass
     @DeleteMapping("/deleteUser")
     public ResponseEntity<Boolean> deleteUser(@RequestBody MemberDTO md) {
-        try {
-            Optional<Member> serNum = memberRepository.findById(md.getId());
-            if (serNum.isPresent()) {
-                return new ResponseEntity<>(adminService.deleteUser(md), HttpStatus.OK);
-            } else {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User Not Found ID : " + md.getId());
-            }
-        } catch (Exception e) {
-            log.error("Error occurred while deleting user", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to delete user");
-        }
+        return new ResponseEntity<>(adminService.deleteUser(md), HttpStatus.OK);
     }
 
     @PostMapping("/addPlace")
     public ResponseEntity<Boolean> addPlace(@RequestBody PlaceDTO req, HttpServletRequest httpReq) {
-        try {
             Optional<Teacher> tId;
             if (req.getTeacherId() != null) {
-                try {
-                    tId = teacherRepository.findTeacherByMember_Id(Long.parseLong(req.getTeacherId().toString()));
-                } catch (NumberFormatException e) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid teacher ID format");
-                }
+                tId = teacherRepository.findTeacherByMember_Id(Long.parseLong(req.getTeacherId().toString()));
                 if (tId.isEmpty()) {
-                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Teacher not found");
+                    throw new ResponseStatusException(HttpStatus.NOT_FOUND, "해당하는 Id를 가진 선생님을 찾을 수 없습니다.");
                 }
             } else {
                 String token = jwtProvider.resolveToken(httpReq);
-                String teacherId = jwtProvider.getUserId(token.replace("Bearer", ""));
-                Optional<Member> acc = memberRepository.findByAccount(teacherId);
+                Long teacherId = Long.valueOf(jwtProvider.getUserId(token.replace("Bearer", "")));
+                Optional<Member> acc = memberRepository.findById(teacherId);
                 tId = teacherRepository.findTeacherByMember_Id(acc.get().getId());
             }
-            return new ResponseEntity<>(adminService.addPlace(req, tId), HttpStatus.OK);
-        } catch (Exception e) {
-            log.error("Error occurred while adding place", e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to add place");
-        }
+        return new ResponseEntity<>(adminService.addPlace(req, tId), HttpStatus.CREATED);
     }
 
     @PutMapping("/editPlace")
     public ResponseEntity<Boolean> ediBPlace(@RequestBody PlaceDTO pd) {
-        try {
-            return new ResponseEntity<>(placeService.editPlace(pd), HttpStatus.OK);
-        } catch (Exception e) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "장소 수정에 실패했습니다.");
-        }
+        return new ResponseEntity<>(placeService.editPlace(pd), HttpStatus.OK);
     }
 
     @DeleteMapping("/deletePlace")

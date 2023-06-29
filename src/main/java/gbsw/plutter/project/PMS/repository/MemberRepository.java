@@ -10,6 +10,8 @@ import java.util.Optional;
 public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByAccount(String account);
     Optional<Member> findBySerialNumber(String serialNumber);
+    Optional<Member> findMemberByGradeAndClassesAndNumber(Integer grade, Integer classes, Integer number);
     Member findMemberByAccount(String account);
     Member findMemberById(Long id);
+
 }

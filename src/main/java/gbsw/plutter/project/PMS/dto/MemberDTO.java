@@ -14,10 +14,12 @@ import java.util.List;
 public class MemberDTO {
     private Long id;
     private String name;
+    private Integer grade;
+    private Integer classes;
+    private Integer number;
     private String serialNum;
     private String account;
     private String password;
     private Integer permission;
     private List<Authority> roles = new ArrayList<>();
-    private String token;
 }

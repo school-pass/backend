@@ -15,7 +15,7 @@ public class Place {
     private Long id;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "teacherId", nullable = false)
+    @JoinColumn(name = "teacherId")
     private Teacher teacher;
 
     @Column(unique = true)

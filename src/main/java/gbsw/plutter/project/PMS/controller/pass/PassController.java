@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -49,27 +50,27 @@ public class PassController {
         return passStartAndEnd;
     }
     @PostMapping("/add")
-    public ResponseEntity<Boolean> addPass(@RequestBody PassDTO pd) throws Exception {
-        try {
+    public ResponseEntity<Boolean> addPass(@RequestBody PassDTO pd) {
             Optional<Member> mId;
             Optional<Place> particular;
             Optional<Teacher> tId;
             mId = memberRepository.findById(pd.getUserId());
             if(mId.isEmpty()) {
-                throw new Exception("ID : "+pd.getUserId()+"를 가진 유저가 존재하지 않습니다.");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID : "+pd.getUserId()+"를 가진 유저가 존재하지 않습니다.");
             }
             particular = placeRepository.findByLocationDetail(pd.getDetail());
             if(particular.isEmpty()) {
-                throw new Exception(pd.getDetail()+"인 장소가 존재하지 않습니다.");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, pd.getDetail()+"인 장소가 존재하지 않습니다.");
             }
             //장소로 선생님 찾기
             tId = teacherRepository.findById(particular.get().getTeacher().getId());
             if(tId.isEmpty()) {
-                throw new Exception("ID : "+pd.getTeacherId()+"를 가진 교사가 존재하지 않습니다.");
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "ID : "+pd.getTeacherId()+"를 가진 교사가 존재하지 않습니다.");
             }
+        try {
             return new ResponseEntity<>(passService.addPass(pd, particular, mId, tId), HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("패스 신청 중 에러가 발생했습니다. 원인 : " + e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "출입증을 신청하지 못했습니다.");
         }
     }
 
@@ -97,32 +98,56 @@ public class PassController {
     }
 
     @PostMapping("/phone")
-    public ResponseEntity<Map<String, Object>> findByIMEI(@RequestBody PassDTO pd) throws Exception {
+    public ResponseEntity<List<Map<String, Object>>> findByUserId(@RequestBody PassDTO pd) throws Exception {
+        List<Map<String, Object>> modifiedPassList = new ArrayList<>();
         try {
-            Pass pass = passService.findByIMEI(pd);
-            Map<String, Object> modfiedPass = new HashMap<>();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            LocalDateTime[] passStartAndEnd = conversionPeriod(pass.getStartPeriod(), pass.getEndPeriod());
-            LocalDateTime passStart = passStartAndEnd[0];
-            LocalDateTime passEnd = passStartAndEnd[1];
-            modfiedPass.put("passId", pass.getId());
-            modfiedPass.put("memberId", pass.getMember().getId());
-            modfiedPass.put("teacherId", pass.getTeacher().getId());
-            modfiedPass.put("placeId", pass.getPlace().getId());
-            modfiedPass.put("passReason", pass.getPassReason());
-            modfiedPass.put("startPeriod", passStart.format(formatter));
-            modfiedPass.put("endPeriod", passEnd.format(formatter));
-            modfiedPass.put("passStatus", pass.getPassStatus());
-            modfiedPass.put("createdAt", pass.getCreatedAt().format(formatter));
-            if(pass.getUpdatedAt() != null) {
-                modfiedPass.put("updatedAt", pass.getUpdatedAt());
+            List<Pass> passes = passService.findByUserId(pd);
+            for(Pass pass : passes) {
+                Map<String, Object> modfiedPass = new HashMap<>();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                LocalDateTime[] passStartAndEnd = conversionPeriod(pass.getStartPeriod(), pass.getEndPeriod());
+                LocalDateTime passStart = passStartAndEnd[0];
+                LocalDateTime passEnd = passStartAndEnd[1];
+                modfiedPass.put("passId", pass.getId());
+                modfiedPass.put("memberId", pass.getMember().getId());
+                modfiedPass.put("teacherId", pass.getTeacher().getId());
+                modfiedPass.put("placeId", pass.getPlace().getId());
+                modfiedPass.put("passReason", pass.getPassReason());
+                modfiedPass.put("startPeriod", passStart.format(formatter));
+                modfiedPass.put("endPeriod", passEnd.format(formatter));
+                modfiedPass.put("passStatus", pass.getPassStatus());
+                modfiedPass.put("createdAt", pass.getCreatedAt().format(formatter));
+                if (pass.getUpdatedAt() != null) {
+                    modfiedPass.put("updatedAt", pass.getUpdatedAt());
+                }
+                modifiedPassList.add(modfiedPass);
             }
-
-            return new ResponseEntity<>(modfiedPass, HttpStatus.OK);
         } catch (Exception e) {
-            throw new Exception("출입증 검색 도중 에러가 발생했습니다. 원인 : "+e.getMessage());
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "출입증 검색 도중 에러가 발생했습니다. 원인 : "+e.getMessage());
+        }
+        return new ResponseEntity<>(modifiedPassList, HttpStatus.OK);
+    }
+
+    @GetMapping("/teacherList")
+    public ResponseEntity<List<Pass>> findAllPassStatusEqualsRequested() {
+        try {
+            List<Pass> result = passService.findAllPassStatusEqualsRequested();
+            return new ResponseEntity<>(result, HttpStatus.OK);
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 요청입니다.");
         }
     }
+
+    //5분마다 여기로 요청을 보내면 userId
+    @PostMapping("")
+    public void checkPassesValid() {
+
+    }
+
+//    @GetMapping("/studentList")
+//    public ResponseEntity<List<Pass>> findAllPassStatusEqualsRequested() {
+//
+//    }
 
     @GetMapping("/list")
     public ResponseEntity<List<Map<String, Object>>> getAllPass() throws Exception {

@@ -18,8 +18,10 @@ import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Component
@@ -42,14 +44,27 @@ public class JwtProvider {
     }
 
     // 토큰 생성
-    public String createToken(String userId,String account, List<Authority> roles) {
-        Claims claims = Jwts.claims().setSubject(userId).setSubject(account);
-        claims.put("roles", roles);
+    public String createToken(Long userId, String name, String serialNumber, String account, List<Authority> authorities) {
+        Claims claims = Jwts.claims().setSubject(String.valueOf(userId));
+        claims.put("account", account);
+        claims.put("name", name);
+        claims.put("serialNumber", serialNumber);
+
+        List<String> roles = authorities.stream()
+                .map(Authority::getName)
+                .collect(Collectors.toList());
+
+        if (!roles.isEmpty()) {
+            claims.put("roles", roles.get(0));
+        }
+
         Date now = new Date();
+        Date expiration = new Date(now.getTime() + exp);
+
         return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)
-                .setExpiration(new Date(now.getTime() + exp))
+                .setExpiration(expiration)
                 .signWith(secretKey, SignatureAlgorithm.HS256)
                 .compact();
     }
